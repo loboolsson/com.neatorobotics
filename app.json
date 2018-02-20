@@ -1,0 +1,44 @@
+{
+  "id": "com.neatorobotics",
+  "version": "1.0.0",
+  "compatibility": ">=1.5.0",
+  "sdk": 2,
+  "name": {
+    "en": "Neato BotVac"
+  },
+  "description": {
+    "en": "Homey app that adds support for the Neato BotVac"
+  },
+  "category": [
+    "appliances"
+  ],
+  "permissions": [],
+  "author": {
+    "name": "Matthew Waanders",
+    "email": "matthew@athom.nl"
+  },
+  "drivers": [
+    {
+      "id": "botvac",
+      "name": {
+        "en": "BotVac driver",
+        "nl": "BotVac driver"
+      },
+      "class": "vacuumcleaner",
+      "capabilities": ["measure_battery", "vacuumcleaner_state"],
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ]
+    }
+  ]
+}
