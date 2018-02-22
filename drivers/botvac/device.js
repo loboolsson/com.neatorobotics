@@ -4,7 +4,7 @@ const Homey = require('homey');
 // Overridden version of botvac client that's promisified, called Neato for ease of use
 const Neato = require('../../lib/node-botvac-promisified');
 
-const POLL_INTERVAL = 15000;
+const POLL_INTERVAL = 10000;
 const states = {
   IDLE: 1,
   BUSY: 2,
@@ -22,7 +22,6 @@ const actions = {
   COPYING_LOGS: 8,
   RECOVERING_LOCATION: 9,
   IEC_TEST: 10,
-
 }
 
 class BotVacDevice extends Homey.Device {
@@ -35,6 +34,7 @@ class BotVacDevice extends Homey.Device {
     this.log('BotVac serial:', this.data.id);
 
     this.driver.once(`BotVac:${this.data.id}`, this._init.bind(this));
+    this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
   }
 
   onDeleted() {
@@ -49,9 +49,10 @@ class BotVacDevice extends Homey.Device {
     let state = await this.connection.getState();
 
     // If idle it's either charging or docked
-    if (state.state === states.IDLE) {
-      if (this.connection.isCharging) this.setCapabilityValue('vacuumcleaner_state', 'charging');
-      else this.setCapabilityValue('vacuumcleaner_state', 'docked');
+    if (state.state === (states.IDLE || state.PAUSED)) {
+      if (state.details.isCharging) this.setCapabilityValue('vacuumcleaner_state', 'charging');
+      else if (state.details.isDocked) this.setCapabilityValue('vacuumcleaner_state', 'docked');
+      else this.setCapabilityValue('vacuumcleaner_state', 'stopped');
     }
     // If busy it's cleaning or spot cleaning
     else if (state.state === states.BUSY) {
@@ -62,11 +63,40 @@ class BotVacDevice extends Homey.Device {
         this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
       }
     }
-    // If paused or there's an error the state is stopped
-    else if (state.state === (states.PAUSED || states.ERROR)) this.setCapabilityValue('vacuumcleaner_state', 'stopped');
+    // If there's an error put state to stopped and display the error
+    else if (state.state === states.ERROR) {
+      this.setCapabilityValue('vacuumcleaner_state', 'stopped');
+      this.setUnavailable(Homey.__(state.error));
+    }
 
     // Set battery charge
-    this.setCapabilityValue('measure_battery', this.connection.charge);
+    this.setCapabilityValue('measure_battery', state.details.charge);
+
+    // Log current status of bot
+    this.log('Robot status updated:', this.connection);
+  }
+
+  async _onCapabilityVaccumState(value) {
+    switch (value) {
+      case 'cleaning':
+        await this.connection.startCleaning(false, 1);
+        break;
+      case 'spot_cleaning':
+        await this.connection.startSpotCleaning(false, 100, 100, false, 1);
+        break;
+      case 'docked':
+      case 'charging':
+        if (!this.connection.canGoToBase) {
+          await this.connection.pauseCleaning();
+          this.setCapabilityValue('vacuumcleaner_state', 'stopped');
+          return Promise.reject(Homey.__('cannot_return'));
+        }
+        await this.connection.sendToBase();
+        break;
+      case 'stopped':
+        await this.connection.pauseCleaning();
+        break;
+    }
   }
 
   async _init() {

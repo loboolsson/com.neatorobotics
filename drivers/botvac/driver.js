@@ -61,7 +61,6 @@ class BotVacDriver extends Homey.Driver {
 
     for(let i = 0; i < robots.length; i++) {
       let robot = robots[i];
-      this.log('Robot found:', robot);
       this._robots[robot._serial] = robot;
       this.emit(`BotVac:${robot._serial}`);
     }
