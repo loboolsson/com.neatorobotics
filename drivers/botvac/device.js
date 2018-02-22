@@ -23,6 +23,10 @@ const actions = {
   RECOVERING_LOCATION: 9,
   IEC_TEST: 10,
 }
+const navigationModes = {
+  NORMAL: 1,
+  EXTRA_CARE: 2,
+}
 
 class BotVacDevice extends Homey.Device {
 
@@ -79,10 +83,10 @@ class BotVacDevice extends Homey.Device {
   async _onCapabilityVaccumState(value) {
     switch (value) {
       case 'cleaning':
-        await this.connection.startCleaning(false, 1);
+        await this.connection.startCleaning(false, navigationModes.NORMAL);
         break;
       case 'spot_cleaning':
-        await this.connection.startSpotCleaning(false, 100, 100, false, 1);
+        await this.connection.startSpotCleaning(false, 100, 100, false, navigationModes.NORMAL);
         break;
       case 'docked':
       case 'charging':
