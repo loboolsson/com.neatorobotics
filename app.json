@@ -7,11 +7,20 @@
     "en": "Neato BotVac"
   },
   "description": {
-    "en": "Homey app that adds support for the Neato BotVac"
+    "en": "Homey app that adds support for the Neato BotVac series",
+    "nl": "Homey app die support voor de Neato BotVac serie toevoegd"
   },
   "category": [
     "appliances"
   ],
+  "tags": {
+    "en": ["vacuumcleaner", "vacuum", "robot", "robotics", "neato"],
+    "nl": ["stofzuiger", "robot", "robots", "neato"]
+  },
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png"
+  },
   "permissions": [],
   "author": {
     "name": "Matthew Waanders",
@@ -21,8 +30,11 @@
     {
       "id": "botvac",
       "name": {
-        "en": "BotVac driver",
-        "nl": "BotVac driver"
+        "en": "BotVac driver"
+      },
+      "images": {
+        "small": "/drivers/botvac/assets/images/small.jpg",
+        "large": "/drivers/botvac/assets/images/large.jpg"
       },
       "class": "vacuumcleaner",
       "capabilities": ["measure_battery", "vacuumcleaner_state"],
