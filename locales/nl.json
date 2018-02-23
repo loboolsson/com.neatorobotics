@@ -34,5 +34,10 @@
   "maint_left_wheel_stuck": "Mijn wielen zitten vast",
   "maint_right_wheel_stuck": "Mijn wielen zitten vast",
   "maint_customer_support_qa": "Er is iets mis, neem contact op met Neato",
-  "cannot_return": "Ik kan momenteel niet naar mijn basisstation"
+  "cannot_return": "Ik kan momenteel niet naar mijn basisstation",
+
+  "error_getting_robots": "Error tijdens het ophalen van uw robots",
+  "error_getting_single_robot": "Error tijdens het vinden van uw robot",
+  "failed_to_get_token": "Error tijdens het inloggen",
+  "error_in_robot_request": "Error tijdens het communiceren met uw robot"
 }

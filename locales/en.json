@@ -34,5 +34,10 @@
   "maint_left_wheel_stuck": "My wheels are stuck",
   "maint_right_wheel_stuck": "My wheels are stuck",
   "maint_customer_support_qa": "Something's wrong, please contact Neato",
-  "cannot_return": "I can't return to my dock right now"
+  "cannot_return": "I can't return to my dock right now",
+
+  "error_getting_robots": "Error getting robots",
+  "error_getting_single_robot": "Error getting specific robot",
+  "failed_to_get_token": "Error whilst authenticating user",
+  "error_in_robot_request": "Error whilst communicating with robot"
 }
