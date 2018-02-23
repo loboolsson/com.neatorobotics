@@ -5,88 +5,62 @@ const Homey = require('homey');
 const Neato = require('../../lib/node-botvac-promisified');
 
 const POLL_INTERVAL = 10000;
-const states = {
-  IDLE: 1,
-  BUSY: 2,
-  PAUSED: 3,
-  ERROR: 4,
-}
-const actions = {
-  HOUSE_CLEANING: 1,
-  SPOT_CLEANING: 2,
-  MANUAL_CLEANING: 3,
-  DOCKING: 4,
-  USER_MENU_ACTIVE: 5,
-  SUSPENDED_CLEANING: 6,
-  UPDATING: 7,
-  COPYING_LOGS: 8,
-  RECOVERING_LOCATION: 9,
-  IEC_TEST: 10,
-}
-const navigationModes = {
-  NORMAL: 1,
-  EXTRA_CARE: 2,
-}
 
 class BotVacDevice extends Homey.Device {
 
-  onInit() {
+  async onInit() {
     this.driver = this.getDriver();
     this.data = this.getData();
 
     this.log('BotVac name:', this.getName());
     this.log('BotVac serial:', this.data.id);
 
-    this.driver.once(`BotVac:${this.data.id}`, this._init.bind(this));
-    this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
+    this._init();
   }
 
   onDeleted() {
     this.log('BotVac removed');
     this.log('BotVac name:', this.getName());
     this.log('BotVac serial:', this.data.id);
-
-    this.driver.removeRobot(this.data.id);
   }
 
   async _onPollState() {
     let state = await this.connection.getState();
 
-    // If idle it's either charging or docked
-    if (state.state === (states.IDLE || state.PAUSED)) {
-      if (state.details.isCharging) this.setCapabilityValue('vacuumcleaner_state', 'charging');
-      else if (state.details.isDocked) this.setCapabilityValue('vacuumcleaner_state', 'docked');
-      else this.setCapabilityValue('vacuumcleaner_state', 'stopped');
+    // Clear errors first
+    if (!this.connection.hasError) {
+      this.setAvailable();
     }
-    // If busy it's cleaning or spot cleaning
-    else if (state.state === states.BUSY) {
-      // These cleaning modes go to normal cleaning
-      if (state.action === (actions.HOUSE_CLEANING || actions.MANUAL_CLEANING || actions.SUSPENDED_CLEANING)) {
-        this.setCapabilityValue('vacuumcleaner_state', 'cleaning');
-      } else if (state.action === actions.SPOT_CLEANING) {
-        this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
-      }
-    }
-    // If there's an error put state to stopped and display the error
-    else if (state.state === states.ERROR) {
+
+    // Check robot's state
+    if (this.connection.isCleaning) {
+      this.setCapabilityValue('vacuumcleaner_state', 'cleaning');
+    } else if (this.connection.isSpotCleaning) {
+      this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
+    } else if (this.connection.isCharging) {
+      this.setCapabilityValue('vacuumcleaner_state', 'charging');
+    } else if (this.connection.isDocked) {
+      this.setCapabilityValue('vacuumcleaner_state', 'docked');
+    } else if (this.connection.hasError) {
       this.setCapabilityValue('vacuumcleaner_state', 'stopped');
       this.setUnavailable(Homey.__(state.error));
+    } else {
+      this.setCapabilityValue('vacuumcleaner_state', 'stopped');
     }
 
     // Set battery charge
-    this.setCapabilityValue('measure_battery', state.details.charge);
+    this.setCapabilityValue('measure_battery', this.connection.charge);
 
-    // Log current status of bot
-    this.log('Robot status updated:', this.connection);
+    this.log('Robot updated:', this.connection);
   }
 
   async _onCapabilityVaccumState(value) {
     switch (value) {
       case 'cleaning':
-        await this.connection.startCleaning(false, navigationModes.NORMAL);
+        await this.connection.startCleaning();
         break;
       case 'spot_cleaning':
-        await this.connection.startSpotCleaning(false, 100, 100, false, navigationModes.NORMAL);
+        await this.connection.startSpotCleaning();
         break;
       case 'docked':
       case 'charging':
@@ -104,9 +78,17 @@ class BotVacDevice extends Homey.Device {
   }
 
   async _init() {
-    this.connection = this.driver.getRobot(this.data.id);
+    if (!this.driver.neatoApi.getToken() || !this.driver.neatoApi.getRefreshToken()) {
+      this.driver.neatoApi.setToken(this.data.access_token);
+      this.driver.neatoApi.setRefreshToken(this.data.refresh_token);
+    }
+
+    this.connection = await this.driver.neatoApi.getOneRobot(this.data.id);
+    this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
+
     this._onPollState();
-    this._pollState = setInterval(this._onPollState.bind(this), POLL_INTERVAL);
+    this._pollStateInterval = setInterval(this._onPollState.bind(this), POLL_INTERVAL);
+
     this.log('BotVac added');
   }
 }

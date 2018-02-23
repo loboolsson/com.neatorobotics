@@ -30,7 +30,7 @@
     {
       "id": "botvac",
       "name": {
-        "en": "BotVac driver"
+        "en": "BotVac connected"
       },
       "images": {
         "small": "/drivers/botvac/assets/images/small.jpg",
@@ -39,6 +39,13 @@
       "class": "vacuumcleaner",
       "capabilities": ["measure_battery", "vacuumcleaner_state"],
       "pair": [
+        {
+          "id": "OAuthLogin",
+          "template": "login_oauth2",
+          "navigation": {
+            "next": "list_devices"
+          }
+        },
         {
           "id": "list_devices",
           "template": "list_devices",

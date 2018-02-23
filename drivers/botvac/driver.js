@@ -1,69 +1,64 @@
 'use strict';
 
 const Homey = require('homey');
-// Overridden version of botvac client that's promisified, called Neato for ease of use
-const Neato = require('../../lib/node-botvac-promisified');
-const NeatoClient = new Neato.Client();
+const NeatoApi = require('../../lib/NeatoApi');
 
 const SEARCH_INTERVAL = 60000;
 
 class BotVacDriver extends Homey.Driver {
 
   async onInit() {
-    this._robots = {};
-
-    let username = Homey.ManagerSettings.get('username');
-    let password = Homey.ManagerSettings.get('password');
-
-    try {
-      await NeatoClient.authorize(username, password, false);
-
-      // Search for new robots every minute
-      this._robotSearchInterval = setInterval(this._searchRobots.bind(this), SEARCH_INTERVAL);
-      this._searchRobots();
-    } catch (err) {
-      this.error(err);
-    }
+    this.neatoApi = new NeatoApi();
   }
 
   onPair(socket) {
+
+    if (!this.authorized) {
+      let apiUrl = this.neatoApi.getOAuth2AuthorizationUrl();
+      let neatoOAuthCallback = new Homey.CloudOAuth2Callback(apiUrl)
+
+      neatoOAuthCallback
+       .on('url', url => {
+           // dend the URL to the front-end to open a popup
+           socket.emit('url', url);
+       })
+       .on('code', async code => {
+           // ... swap your code here for an access token
+           let tokensObject = await this.neatoApi.exchangeCode(code);
+           this.neatoApi.setToken(tokensObject.access_token);
+           this.neatoApi.setRefreshToken(tokensObject.refresh_token);
+           // tell the front-end we're done
+           this.emit(`authorized`);
+           socket.emit('authorized');
+       })
+       .generate()
+       .catch( err => {
+           socket.emit('error', err);
+       });
+    }
+
     socket.on('list_devices', async (data, callback) => {
-
       let pairingDevices = [];
+      let robots = await this.neatoApi.getRobots();
 
-      for(let robotKey in this._robots) {
-        if (!this._robots.hasOwnProperty(robotKey)) continue;
-
-        let robot = this._robots[robotKey];
+      this.log('Robots found:', robots);
+      for(let i = 0; i < robots.length; i++) {
+        let robot = robots[i];
 
         pairingDevices.push({
           name: robot.name,
           data: {
-            id: robot._serial
+            id: robot._serial,
+            secret: robot._secret,
+            model: robot.model,
+            access_token: this.neatoApi.getToken(),
+            refresh_token: this.neatoApi.getRefreshToken()
           }
         });
       }
 
       callback(null, pairingDevices);
     });
-  }
-
-  getRobot(serial) {
-    return this._robots[serial];
-  }
-
-  removeRobot(serial) {
-    delete this._robots[serial];
-  }
-
-  async _searchRobots() {
-    let robots = await NeatoClient.getRobots();
-
-    for(let i = 0; i < robots.length; i++) {
-      let robot = robots[i];
-      this._robots[robot._serial] = robot;
-      this.emit(`BotVac:${robot._serial}`);
-    }
   }
 }
 
