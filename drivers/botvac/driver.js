@@ -3,8 +3,6 @@
 const Homey = require('homey');
 const NeatoApi = require('../../lib/NeatoApi');
 
-const SEARCH_INTERVAL = 60000;
-
 class BotVacDriver extends Homey.Driver {
 
   async onInit() {
