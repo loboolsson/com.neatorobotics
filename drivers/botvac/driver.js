@@ -13,29 +13,27 @@ class BotVacDriver extends Homey.Driver {
 
   onPair(socket) {
 
-    if (!this.authorized) {
-      let apiUrl = this.neatoApi.getOAuth2AuthorizationUrl();
-      let neatoOAuthCallback = new Homey.CloudOAuth2Callback(apiUrl)
+    let apiUrl = this.neatoApi.getOAuth2AuthorizationUrl();
+    let neatoOAuthCallback = new Homey.CloudOAuth2Callback(apiUrl)
 
-      neatoOAuthCallback
-       .on('url', url => {
-           // dend the URL to the front-end to open a popup
-           socket.emit('url', url);
-       })
-       .on('code', async code => {
-           // ... swap your code here for an access token
-           let tokensObject = await this.neatoApi.exchangeCode(code);
-           this.neatoApi.setToken(tokensObject.access_token);
-           this.neatoApi.setRefreshToken(tokensObject.refresh_token);
-           // tell the front-end we're done
-           this.emit(`authorized`);
-           socket.emit('authorized');
-       })
-       .generate()
-       .catch( err => {
-           socket.emit('error', err);
-       });
-    }
+    neatoOAuthCallback
+     .on('url', url => {
+         // dend the URL to the front-end to open a popup
+         socket.emit('url', url);
+     })
+     .on('code', async code => {
+         // ... swap your code here for an access token
+         let tokensObject = await this.neatoApi.exchangeCode(code);
+         this.neatoApi.setToken(tokensObject.access_token, tokensObject.expires_in);
+         this.neatoApi.setRefreshToken(tokensObject.refresh_token);
+         // tell the front-end we're done
+         this.emit(`authorized`);
+         socket.emit('authorized');
+     })
+     .generate()
+     .catch( err => {
+         socket.emit('error', err);
+     });
 
     socket.on('list_devices', async (data, callback) => {
       let pairingDevices = [];
@@ -50,9 +48,6 @@ class BotVacDriver extends Homey.Driver {
           data: {
             id: robot._serial,
             secret: robot._secret,
-            model: robot.model,
-            access_token: this.neatoApi.getToken(),
-            refresh_token: this.neatoApi.getRefreshToken()
           }
         });
       }

@@ -1,8 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
-// Overridden version of botvac client that's promisified, called Neato for ease of use
-const Neato = require('../../lib/node-botvac-promisified');
+const NeatoRobot = require('../../lib/NeatoRobot');
 
 const POLL_INTERVAL = 10000;
 
@@ -78,12 +77,12 @@ class BotVacDevice extends Homey.Device {
   }
 
   async _init() {
-    if (!this.driver.neatoApi.getToken() || !this.driver.neatoApi.getRefreshToken()) {
-      this.driver.neatoApi.setToken(this.data.access_token);
-      this.driver.neatoApi.setRefreshToken(this.data.refresh_token);
-    }
-
-    this.connection = await this.driver.neatoApi.getOneRobot(this.data.id);
+    this.connection = new NeatoRobot({
+      name: this.getName(),
+      serial: this.data.id,
+      secret_key: this.data.secret
+    });
+    
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
 
     this._onPollState();
