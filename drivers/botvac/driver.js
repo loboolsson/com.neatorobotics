@@ -25,7 +25,6 @@ class BotVacDriver extends Homey.Driver {
          this.neatoApi.setToken(tokensObject.access_token, tokensObject.expires_in);
          this.neatoApi.setRefreshToken(tokensObject.refresh_token);
          // tell the front-end we're done
-         this.emit(`authorized`);
          socket.emit('authorized');
      })
      .generate()
