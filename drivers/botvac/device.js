@@ -49,8 +49,6 @@ class BotVacDevice extends Homey.Device {
 
     // Set battery charge
     this.setCapabilityValue('measure_battery', this.connection.charge);
-
-    this.log('Robot updated:', this.connection);
   }
 
   async _onCapabilityVaccumState(value) {
@@ -82,7 +80,7 @@ class BotVacDevice extends Homey.Device {
       serial: this.data.id,
       secret_key: this.data.secret
     });
-    
+
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
 
     this._onPollState();
