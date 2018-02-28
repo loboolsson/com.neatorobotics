@@ -16,15 +16,11 @@ class BotVacDriver extends Homey.Driver {
 
     neatoOAuthCallback
      .on('url', url => {
-         // dend the URL to the front-end to open a popup
          socket.emit('url', url);
      })
      .on('code', async code => {
-         // ... swap your code here for an access token
          let tokensObject = await this.neatoApi.exchangeCode(code);
-         this.neatoApi.setToken(tokensObject.access_token, tokensObject.expires_in);
-         this.neatoApi.setRefreshToken(tokensObject.refresh_token);
-         // tell the front-end we're done
+         this.neatoApi.setToken(tokensObject);
          socket.emit('authorized');
      })
      .generate()
@@ -36,7 +32,6 @@ class BotVacDriver extends Homey.Driver {
       let pairingDevices = [];
       let robots = await this.neatoApi.getRobots();
 
-      this.log('Robots found:', robots);
       for(let i = 0; i < robots.length; i++) {
         let robot = robots[i];
 
@@ -44,8 +39,10 @@ class BotVacDriver extends Homey.Driver {
           name: robot.name,
           data: {
             id: robot._serial,
+          },
+          store: {
             secret: robot._secret,
-          }
+          },
         });
       }
 

@@ -10,6 +10,7 @@ class BotVacDevice extends Homey.Device {
   async onInit() {
     this.driver = this.getDriver();
     this.data = this.getData();
+    this.store = this.getStore();
 
     this.log('BotVac name:', this.getName());
     this.log('BotVac serial:', this.data.id);
@@ -24,31 +25,36 @@ class BotVacDevice extends Homey.Device {
   }
 
   async _onPollState() {
-    let state = await this.connection.getState();
 
-    // Clear errors first
-    if (!this.connection.hasError) {
-      this.setAvailable();
+    try {
+      let state = await this.connection.getState();
+
+      // Clear errors first
+      if (!this.connection.hasError) {
+        this.setAvailable();
+      }
+
+      // Check robot's state
+      if (this.connection.isCleaning) {
+        this.setCapabilityValue('vacuumcleaner_state', 'cleaning');
+      } else if (this.connection.isSpotCleaning) {
+        this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
+      } else if (this.connection.isCharging) {
+        this.setCapabilityValue('vacuumcleaner_state', 'charging');
+      } else if (this.connection.isDocked) {
+        this.setCapabilityValue('vacuumcleaner_state', 'docked');
+      } else if (this.connection.hasError) {
+        this.setCapabilityValue('vacuumcleaner_state', 'stopped');
+        this.setUnavailable(Homey.__(state.error));
+      } else {
+        this.setCapabilityValue('vacuumcleaner_state', 'stopped');
+      }
+
+      // Set battery charge
+      this.setCapabilityValue('measure_battery', this.connection.charge);
+    } catch (err) {
+      this.error(err);
     }
-
-    // Check robot's state
-    if (this.connection.isCleaning) {
-      this.setCapabilityValue('vacuumcleaner_state', 'cleaning');
-    } else if (this.connection.isSpotCleaning) {
-      this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
-    } else if (this.connection.isCharging) {
-      this.setCapabilityValue('vacuumcleaner_state', 'charging');
-    } else if (this.connection.isDocked) {
-      this.setCapabilityValue('vacuumcleaner_state', 'docked');
-    } else if (this.connection.hasError) {
-      this.setCapabilityValue('vacuumcleaner_state', 'stopped');
-      this.setUnavailable(Homey.__(state.error));
-    } else {
-      this.setCapabilityValue('vacuumcleaner_state', 'stopped');
-    }
-
-    // Set battery charge
-    this.setCapabilityValue('measure_battery', this.connection.charge);
   }
 
   async _onCapabilityVaccumState(value) {
@@ -78,7 +84,7 @@ class BotVacDevice extends Homey.Device {
     this.connection = new NeatoRobot({
       name: this.getName(),
       serial: this.data.id,
-      secret_key: this.data.secret
+      secret_key: this.store.secret
     });
 
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
