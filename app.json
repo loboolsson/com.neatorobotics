@@ -18,8 +18,8 @@
     "nl": ["stofzuiger", "robot", "robots", "neato"]
   },
   "images": {
-    "small": "/assets/images/small.png",
-    "large": "/assets/images/large.png"
+    "small": "/assets/images/small.jpg",
+    "large": "/assets/images/large.jpg"
   },
   "permissions": [],
   "author": {
