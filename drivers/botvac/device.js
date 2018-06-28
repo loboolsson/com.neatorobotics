@@ -3,7 +3,7 @@
 const Homey = require('homey');
 const NeatoRobot = require('../../lib/NeatoRobot');
 
-const POLL_INTERVAL = 1000;
+const POLL_INTERVAL = 2000;
 
 class BotVacDevice extends Homey.Device {
 
