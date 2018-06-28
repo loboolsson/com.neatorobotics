@@ -52,8 +52,10 @@ class BotVacDevice extends Homey.Device {
 
       // Set battery charge
       this.setCapabilityValue('measure_battery', this.connection.charge);
+      this.setAvailable();
     } catch (err) {
       this.error(err);
+      this.setUnavailable('Neato API not reachable');
     }
   }
 
