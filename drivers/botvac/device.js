@@ -13,7 +13,7 @@ class BotVacDevice extends Homey.Device {
     this.log('BotVac name:', this.getName());
     this.log('BotVac serial:', this.data.id);
 
-    this.pollInterval = this.getSetting('poll_interval') * 1000;
+    this.getSetting('poll_interval') ? this.pollInterval = this.getSetting('poll_interval') * 1000 : this.pollInterval = 10000;
 
     this._init();
   }
