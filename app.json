@@ -1,6 +1,6 @@
 {
   "id": "com.neatorobotics",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "compatibility": ">=1.5.0",
   "sdk": 2,
   "name": {
@@ -56,6 +56,17 @@
         {
           "id": "add_devices",
           "template": "add_devices"
+        }
+      ],
+      "settings": [
+        {
+          "id": "poll_interval",
+          "type": "number",
+          "label": {
+            "nl": "Polling interval voor de apparaatstatus",
+            "en": "Interval for polling the device state"
+          },
+          "value": 10
         }
       ]
     }

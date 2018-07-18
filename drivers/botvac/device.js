@@ -3,8 +3,6 @@
 const Homey = require('homey');
 const NeatoRobot = require('../../lib/NeatoRobot');
 
-const POLL_INTERVAL = 10000;
-
 class BotVacDevice extends Homey.Device {
 
   async onInit() {
@@ -15,7 +13,20 @@ class BotVacDevice extends Homey.Device {
     this.log('BotVac name:', this.getName());
     this.log('BotVac serial:', this.data.id);
 
+    this.pollInterval = this.getSetting('poll_interval') * 1000;
+
     this._init();
+  }
+
+  onSettings(oldSettings, newSettings, changedKeys, callback) {
+      if (changedKeys.contains('poll_interval')) {
+        this.pollInterval = newSettings.poll_interval * 1000;
+        clearInterval(this._pollStateInterval);
+
+        this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
+      }
+
+      callback(null, true);
   }
 
   onDeleted() {
@@ -52,8 +63,10 @@ class BotVacDevice extends Homey.Device {
 
       // Set battery charge
       this.setCapabilityValue('measure_battery', this.connection.charge);
+      this.setAvailable();
     } catch (err) {
       this.error(err);
+      this.setUnavailable('Neato API not reachable');
     }
   }
 
@@ -90,7 +103,7 @@ class BotVacDevice extends Homey.Device {
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
 
     this._onPollState();
-    this._pollStateInterval = setInterval(this._onPollState.bind(this), POLL_INTERVAL);
+    this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
 
     this.log('BotVac added');
   }
