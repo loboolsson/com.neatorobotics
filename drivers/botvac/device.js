@@ -19,7 +19,7 @@ class BotVacDevice extends Homey.Device {
   }
 
   onSettings(oldSettings, newSettings, changedKeys, callback) {
-      if (changedKeys.contains('poll_interval')) {
+      if (changedKeys.includes('poll_interval')) {
         this.pollInterval = newSettings.poll_interval * 1000;
         clearInterval(this._pollStateInterval);
 
