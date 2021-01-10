@@ -1,0 +1,11 @@
+{
+  "name": "com.neato.botvac.community",
+  "version": "0.0.1",
+  "main": "app.js",
+  "dependencies": {
+    "node-botvac": "^0.4.0"
+  },
+  "devDependencies": {
+    "homey": "^2.9.4"
+  }
+}

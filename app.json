@@ -1,0 +1,40 @@
+{
+  "id": "com.neato.botvac.community",
+  "version": "0.0.1",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "name": {
+    "en": "Neato BotVac Community"
+  },
+  "description": {
+    "en": "Community developed app for Neato Botvac Connected series"
+  },
+  "category": [
+    "appliances"
+  ],
+  "permissions": [],
+  "images": {
+    "large": "/assets/images/large.png",
+    "small": "/assets/images/small.png"
+  },
+  "author": {
+    "name": "Lobo Olsson",
+    "email": "lobo.olsson@gmail.com"
+  },
+  "flow": {
+    "actions": [
+      {
+        "id": "start_cleaning",
+        "title": {
+          "en": "Start a cleaning cycle"
+        }
+      },
+      {
+        "id": "stop_cleaning",
+        "title": {
+          "en": "Stop a cleaning cycle"
+        }
+      }
+    ]
+  }
+}
