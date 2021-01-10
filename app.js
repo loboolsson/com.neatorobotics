@@ -55,9 +55,36 @@ class BotVacCommunity extends Homey.App {
         }
         if (robots.length) {
           //Start cleaning with the First Robot
-          log(robots[0].name + " will start cleaning");
-          robots[0].startCleaning(true, 2, true);
-          return Promise.resolve(true);
+          var robot = robots[0];
+          robot.getState(
+            function (error, state) {
+              if (error) {
+                log(robot.name + " got an error");
+                return Promise.resolve(false);
+              }
+
+              if (!state || !state.availableCommands) {
+                log(robot.name + " didn't return states");
+                return Promise.resolve(false)
+              }
+
+              if (state.availableCommands.start) {
+                robot.startCleaning(true, 2, true);
+                log(robot.name + " will start cleaning");
+                return Promise.resolve(true);
+              } else if (state.availableCommands.resume) {
+                robot.resumeCleaning();
+                log(robot.name + " will resume cleaning");
+                return Promise.resolve(true);
+              } else {
+                log(robot.name + " cannot start or resume");
+                return Promise.resolve(false);
+              }
+            }
+          )
+        } else {
+          log("No robots found");
+          return Promise.resolve(false);
         }
       });
     });
@@ -113,8 +140,9 @@ class BotVacCommunity extends Homey.App {
                 return Promise.resolve(false);
               }
             }
-
-            return sendToDock(robots[0], 10, log)
+            // It can take significant time from BotVac Pause until it can be sent to dock.
+            // Resolving this with retries for now
+            return sendToDock(robots[0], 50, log)
           });
         }
       });
