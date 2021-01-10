@@ -35,7 +35,11 @@ class BotVacCommunity extends Homey.App {
     this.log('BotVacCommunity has been initialized');
   }
 
+  /**
+   * Start the cleaning cycle.
+   */
   startCleaning (log) {
+    log("startCleaning function call")
     var client = new Botvac.Client();
     //authorize
     client.authorize(this.credentials.user, this.credentials.pass, true, function (error) {
@@ -51,8 +55,6 @@ class BotVacCommunity extends Homey.App {
         }
         if (robots.length) {
           //Start cleaning with the First Robot
-
-          log(robots[0]);
           log(robots[0].name + " will start cleaning");
           robots[0].startCleaning(true, 2, true);
           return Promise.resolve(true);
@@ -61,7 +63,11 @@ class BotVacCommunity extends Homey.App {
     });
   }
 
+  /**
+   * Stop (pause) the cleaning cycle and send BotVac to dock.
+   */
   stopCleaning (log) {
+    log("stopCleaning function call")
     var client = new Botvac.Client();
     //authorize
     client.authorize(this.credentials.user, this.credentials.pass, true, function (error) {
@@ -76,12 +82,40 @@ class BotVacCommunity extends Homey.App {
           return Promise.resolve(false);
         }
         if (robots.length) {
-          //Start cleaning with the First Robot
-          robots[0].stopCleaning(function (error, result) {
-            robots[0].sendToBase();
+          //Pause cleaning with the First Robot (Cleaning must be paused before it can be sent to dock)
+          robots[0].pauseCleaning(function (error, result) {
+            if (error) {
+              log("Error with pausing", error)
+              return Promise.resolve(false);
+            }
+            log(robots[0].name + " was paused");
+
+            var sendToDock = function (robot, retries, log) {
+              if (retries > 0) {
+                robot.getState(function (error, state) {
+                  if (error) {
+                    return Promise.resolve(false);
+                  }
+                  if (state && state.availableCommands) {
+                    log(state.availableCommands);
+                    if (state.availableCommands.goToBase) {
+                      robot.sendToBase();
+                      log(robot.name + " will return to base");
+                      return Promise.resolve(true);
+                    } else {
+                      retries--;
+                      return sendToDock(robot, retries, log);
+                    }
+                  }
+                })
+              } else {
+                log(robot.name + " cannot return to base");
+                return Promise.resolve(false);
+              }
+            }
+
+            return sendToDock(robots[0], 10, log)
           });
-          log(robots[0].name + " was stopped and will return to base");
-          return Promise.resolve(true);
         }
       });
     });

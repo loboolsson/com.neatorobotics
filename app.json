@@ -21,6 +21,7 @@
     "name": "Lobo Olsson",
     "email": "lobo.olsson@gmail.com"
   },
+  "source": "https://github.com/loboolsson/com.neato.botvac.community",
   "flow": {
     "actions": [
       {
