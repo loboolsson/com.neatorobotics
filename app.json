@@ -1,6 +1,6 @@
 {
   "id": "com.neato.botvac.community",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "name": {
@@ -14,8 +14,8 @@
   ],
   "permissions": [],
   "images": {
-    "large": "/assets/images/large.png",
-    "small": "/assets/images/small.png"
+    "large": "/assets/images/large.jpg",
+    "small": "/assets/images/small.jpg"
   },
   "author": {
     "name": "Lobo Olsson",

@@ -1,5 +1,8 @@
 {
   "0.0.1": {
     "en": "Inital launch. Start and stop cleaning while respecting No-Go lines/zones"
+  },
+  "0.0.2": {
+    "en": "Updated icon and image assets"
   }
 }
