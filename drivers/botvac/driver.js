@@ -10,30 +10,29 @@ class BotVacDriver extends Homey.Driver {
   }
 
   onPair(socket) {
-
-    let apiUrl = this.neatoApi.getOAuth2AuthorizationUrl();
-    let neatoOAuthCallback = new Homey.CloudOAuth2Callback(apiUrl)
+    const apiUrl = this.neatoApi.getOAuth2AuthorizationUrl();
+    const neatoOAuthCallback = new Homey.CloudOAuth2Callback(apiUrl);
 
     neatoOAuthCallback
-     .on('url', url => {
-         socket.emit('url', url);
-     })
-     .on('code', async code => {
-         let tokensObject = await this.neatoApi.exchangeCode(code);
-         this.neatoApi.setToken(tokensObject);
-         socket.emit('authorized');
-     })
-     .generate()
-     .catch( err => {
-         socket.emit('error', err);
-     });
+      .on('url', url => {
+        socket.emit('url', url);
+      })
+      .on('code', async code => {
+        const tokensObject = await this.neatoApi.exchangeCode(code);
+        this.neatoApi.setToken(tokensObject);
+        socket.emit('authorized');
+      })
+      .generate()
+      .catch(err => {
+        socket.emit('error', err);
+      });
 
     socket.on('list_devices', async (data, callback) => {
-      let pairingDevices = [];
-      let robots = await this.neatoApi.getRobots();
+      const pairingDevices = [];
+      const robots = await this.neatoApi.getRobots();
 
-      for(let i = 0; i < robots.length; i++) {
-        let robot = robots[i];
+      for (let i = 0; i < robots.length; i++) {
+        const robot = robots[i];
 
         pairingDevices.push({
           name: robot.name,
@@ -49,6 +48,7 @@ class BotVacDriver extends Homey.Driver {
       callback(null, pairingDevices);
     });
   }
+
 }
 
 module.exports = BotVacDriver;
