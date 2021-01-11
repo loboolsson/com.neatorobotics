@@ -4,31 +4,27 @@ const Homey = require('homey');
 const Botvac = require('node-botvac');
 
 class BotVacCommunity extends Homey.App {
+
   credentials={};
 
   /**
    * onInit is called when the app is initialized.
    */
   async onInit() {
-
-    //Register Actions
-    let startCleaningAction = this.homey.flow.getActionCard('start_cleaning');
+    // Register Actions
+    const startCleaningAction = this.homey.flow.getActionCard('start_cleaning');
     startCleaningAction
-        .registerRunListener(async (args, state) => {
-          this.log("Has started");
-          let startCleaning = this.startCleaning(this.log);
-          return startCleaning;
-        });
+      .registerRunListener(async (args, state) => {
+        return this.startCleaning(this.log);
+      });
 
-    let stopCleaningAction = this.homey.flow.getActionCard('stop_cleaning');
-    stopCleaningAction.registerRunListener(async (args, state) => {
-      // this.homey.speak("Stop Cleaning");
-      this.log("Has stopped");
-      let StopCleaning = this.stopCleaning(this.log);
-      return StopCleaning;
-    });
+    const stopCleaningAction = this.homey.flow.getActionCard('stop_cleaning');
+    stopCleaningAction
+      .registerRunListener(async (args, state) => {
+        return this.stopCleaning(this.log);
+      });
 
-    //get user credentials
+    // Get settings
     this.credentials.user = this.homey.settings.get('username');
     this.credentials.pass = this.homey.settings.get('password');
 
@@ -38,52 +34,51 @@ class BotVacCommunity extends Homey.App {
   /**
    * Start the cleaning cycle.
    */
-  startCleaning (log) {
-    log("startCleaning function call")
-    var client = new Botvac.Client();
-    //authorize
-    client.authorize(this.credentials.user, this.credentials.pass, true, function (error) {
+  startCleaning(log) {
+    log('startCleaning function call');
+    const client = new Botvac.Client();
+    // eslint-disable-next-line consistent-return
+    client.authorize(this.credentials.user, this.credentials.pass, true, error => {
       if (error) {
         log(error);
         return Promise.resolve(false);
       }
-      //get your robots
-      client.getRobots(function (error, robots) {
+      // eslint-disable-next-line no-shadow, consistent-return
+      client.getRobots((error, robots) => {
         if (error) {
           log(error);
           return Promise.resolve(false);
         }
         if (robots.length) {
-          //Start cleaning with the First Robot
-          var robot = robots[0];
-          robot.getState(
-            function (error, state) {
-              if (error) {
-                log(robot.name + " got an error");
-                return Promise.resolve(false);
-              }
-
-              if (!state || !state.availableCommands) {
-                log(robot.name + " didn't return states");
-                return Promise.resolve(false)
-              }
-
-              if (state.availableCommands.start) {
-                robot.startCleaning(true, 2, true);
-                log(robot.name + " will start cleaning");
-                return Promise.resolve(true);
-              } else if (state.availableCommands.resume) {
-                robot.resumeCleaning();
-                log(robot.name + " will resume cleaning");
-                return Promise.resolve(true);
-              } else {
-                log(robot.name + " cannot start or resume");
-                return Promise.resolve(false);
-              }
+          // Start cleaning with Robot 0 since I haven't implemented robot selection logic yet
+          const robot = robots[0];
+          // eslint-disable-next-line no-shadow
+          robot.getState((error, state) => {
+            if (error) {
+              log(`${robot.name} got an error`);
+              return Promise.resolve(false);
             }
-          )
+
+            if (!state || !state.availableCommands) {
+              log(`${robot.name} didn't return states`);
+              return Promise.resolve(false);
+            }
+
+            if (state.availableCommands.start) {
+              robot.startCleaning(true, 2, true);
+              log(`${robot.name} will start cleaning`);
+              return Promise.resolve(true);
+            }
+            if (state.availableCommands.resume) {
+              robot.resumeCleaning();
+              log(`${robot.name} will resume cleaning`);
+              return Promise.resolve(true);
+            }
+            log(`${robot.name} cannot start or resume`);
+            return Promise.resolve(false);
+          });
         } else {
-          log("No robots found");
+          log('No robots found');
           return Promise.resolve(false);
         }
       });
@@ -93,33 +88,38 @@ class BotVacCommunity extends Homey.App {
   /**
    * Stop (pause) the cleaning cycle and send BotVac to dock.
    */
-  stopCleaning (log) {
-    log("stopCleaning function call")
-    var client = new Botvac.Client();
-    //authorize
-    client.authorize(this.credentials.user, this.credentials.pass, true, function (error) {
+  stopCleaning(log) {
+    log('stopCleaning function call');
+    const client = new Botvac.Client();
+    // eslint-disable-next-line consistent-return
+    client.authorize(this.credentials.user, this.credentials.pass, true, error => {
       if (error) {
         log(error);
         return Promise.resolve(false);
       }
-      //get your robots
-      client.getRobots(function (error, robots) {
+      // eslint-disable-next-line no-shadow, consistent-return
+      client.getRobots((error, robots) => {
         if (error) {
           log(error);
           return Promise.resolve(false);
         }
         if (robots.length) {
-          //Pause cleaning with the First Robot (Cleaning must be paused before it can be sent to dock)
-          robots[0].pauseCleaning(function (error, result) {
+          const robot = robots[0];
+          // Pause cleaning with the First Robot
+          // Cleaning must be paused before it can be sent to dock
+          // eslint-disable-next-line no-shadow
+          robot.pauseCleaning((error, result) => {
             if (error) {
-              log("Error with pausing", error)
+              log(`${robot.name} could not pause`);
               return Promise.resolve(false);
             }
-            log(robots[0].name + " was paused");
+            log(`${robot.name} was paused`);
 
-            var sendToDock = function (robot, retries, log) {
+            // eslint-disable-next-line no-shadow
+            function sendToDock(robot, retries, log) {
               if (retries > 0) {
-                robot.getState(function (error, state) {
+                // eslint-disable-next-line no-shadow, consistent-return
+                robot.getState((error, state) => {
                   if (error) {
                     return Promise.resolve(false);
                   }
@@ -127,27 +127,28 @@ class BotVacCommunity extends Homey.App {
                     log(state.availableCommands);
                     if (state.availableCommands.goToBase) {
                       robot.sendToBase();
-                      log(robot.name + " will return to base");
+                      log(`${robot.name} will return to base`);
                       return Promise.resolve(true);
-                    } else {
-                      retries--;
-                      return sendToDock(robot, retries, log);
                     }
+
+                    // If we cannot send to base, try again
+                    retries--;
+                    return sendToDock(robot, retries, log);
                   }
-                })
-              } else {
-                log(robot.name + " cannot return to base");
-                return Promise.resolve(false);
+                });
               }
+              log(`${robot.name} cannot return to base`);
+              return Promise.resolve(false);
             }
             // It can take significant time from BotVac Pause until it can be sent to dock.
-            // Resolving this with retries for now
-            return sendToDock(robots[0], 50, log)
+            // Resolving this with recursive retries for now
+            return sendToDock(robot, 50, log);
           });
         }
       });
     });
   }
+
 }
 
 module.exports = BotVacCommunity;
