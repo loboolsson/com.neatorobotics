@@ -6,6 +6,8 @@
     "node-botvac": "^0.4.0"
   },
   "devDependencies": {
+    "eslint": "^7.17.0",
+    "eslint-config-athom": "^2.1.0",
     "homey": "^2.9.4"
   }
 }
