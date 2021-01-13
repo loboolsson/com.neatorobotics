@@ -18,19 +18,14 @@ class BotVacCommunity extends Homey.App {
     startCleaningAction
       .registerRunListener(async (args, state) => {
         this.log('Register start cleaning');
-        const promise = this.getRobot()
-          .then(robot => {
-            this.log('fetched robot', robot);
-          }, error => {
-            this.log('failed auth', error);
-          });
+        const promise = this.startCleaning();
         return promise;
       });
 
     const stopCleaningAction = this.homey.flow.getActionCard('stop_cleaning');
     stopCleaningAction
       .registerRunListener(async (args, state) => {
-        return this.auth(this);
+        return this.stopCleaning(this.log);
       });
 
     // Get settings
@@ -41,7 +36,7 @@ class BotVacCommunity extends Homey.App {
   }
 
   /**
-   * Abstract authorization
+   * Authentication
    */
   auth() {
     const self = this;
@@ -63,7 +58,7 @@ class BotVacCommunity extends Homey.App {
   }
 
   /**
-   * Get robots
+   * Get robot
    */
   async getRobot() {
     const self = this;
@@ -97,55 +92,41 @@ class BotVacCommunity extends Homey.App {
   /**
    * Start the cleaning cycle.
    */
-  startCleaning(log) {
-    log('startCleaning function call');
-    const client = new Botvac.Client();
-    // eslint-disable-next-line consistent-return
-    client.authorize(this.credentials.user, this.credentials.pass, true, error => {
-      if (error) {
-        log(error);
-        return Promise.resolve(false);
-      }
-      // eslint-disable-next-line no-shadow, consistent-return
-      client.getRobots((error, robots) => {
+  async startCleaning() {
+    const self = this;
+    let robot;
+
+    self.log('startCleaning function call');
+    try {
+      robot = await this.getRobot();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    const cleaningPromise = new Promise((resolve, reject) => {
+      robot.getState((error, state) => {
         if (error) {
-          log(error);
-          return Promise.resolve(false);
+          reject(error);
         }
-        if (robots.length) {
-          // Start cleaning with Robot 0 since I haven't implemented robot selection logic yet
-          const robot = robots[0];
-          // eslint-disable-next-line no-shadow
-          robot.getState((error, state) => {
-            if (error) {
-              log(`${robot.name} got an error`);
-              return Promise.resolve(false);
-            }
-
-            if (!state || !state.availableCommands) {
-              log(`${robot.name} didn't return states`);
-              return Promise.resolve(false);
-            }
-
-            if (state.availableCommands.start) {
-              robot.startCleaning(true, 2, true);
-              log(`${robot.name} will start cleaning`);
-              return Promise.resolve(true);
-            }
-            if (state.availableCommands.resume) {
-              robot.resumeCleaning();
-              log(`${robot.name} will resume cleaning`);
-              return Promise.resolve(true);
-            }
-            log(`${robot.name} cannot start or resume`);
-            return Promise.resolve(false);
-          });
-        } else {
-          log('No robots found');
-          return Promise.resolve(false);
+        if (!state || !state.availableCommands) {
+          // eslint-disable-next-line prefer-promise-reject-errors
+          reject(`${robot.name} didn't return states`);
         }
+        if (state.availableCommands.start) {
+          robot.startCleaning(true, 2, true);
+          self.log(`${robot.name} will start cleaning`);
+          resolve(true);
+        }
+        if (state.availableCommands.resume) {
+          robot.resumeCleaning();
+          self.log(`${robot.name} will resume cleaning`);
+          resolve(true);
+        }
+        // eslint-disable-next-line prefer-promise-reject-errors
+        reject(`${robot.name} cannot start or resume`);
       });
     });
+
+    return cleaningPromise;
   }
 
   /**
