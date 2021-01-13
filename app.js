@@ -18,14 +18,7 @@ class BotVacCommunity extends Homey.App {
     startCleaningAction
       .registerRunListener(async (args, state) => {
         this.log('Register start cleaning');
-        const promise = this.auth(this)
-          .then(result => {
-            this.log('done with auth', result);
-            return this.getRobot(this);
-          },
-          error => {
-            this.log('failed Auth', error);
-          })
+        const promise = this.getRobot()
           .then(robot => {
             this.log('fetched robot', robot);
           }, error => {
@@ -50,37 +43,46 @@ class BotVacCommunity extends Homey.App {
   /**
    * Abstract authorization
    */
-  auth(parent) {
-    parent.log('Run auth');
+  auth() {
+    const self = this;
+    self.log('Run auth');
     const authPromise = new Promise((resolve, reject) => {
-      parent.log('In the promise');
-      parent.botvacClient.authorize(parent.user, parent.pass, true, error => {
+      self.log('In the promise');
+      self.botvacClient.authorize(self.user, self.pass, false, error => {
         if (error) {
-          parent.log('Auth error', error);
+          self.log('Auth error', error);
           reject(error);
         } else {
-          parent.log('Auth success', error);
+          self.log('Auth success', error);
           resolve(true);
         }
       });
     });
-    parent.log('return auth');
+    self.log('return auth');
     return authPromise;
   }
 
   /**
-   * Abstract authorization
+   * Get robots
    */
-  getRobot(parent) {
-    parent.log('Run robots');
+  async getRobot() {
+    const self = this;
+
+    try {
+      await this.auth();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+
+    self.log('Run robots');
     const robotPromise = new Promise((resolve, reject) => {
-      parent.log('In the robot promise');
-      parent.botvacClient.getRobots((error, robots) => {
+      self.log('In the robot promise');
+      self.botvacClient.getRobots((error, robots) => {
         if (error) {
-          parent.log('Error getting robots', error);
+          self.log('Error getting robots', error);
           reject(error);
         } else if (!robots) {
-          parent.log('0 robots returned', error);
+          self.log('0 robots returned', error);
           reject(error);
         } else {
           const robot = robots[0];
@@ -88,7 +90,7 @@ class BotVacCommunity extends Homey.App {
         }
       });
     });
-    parent.log('return robot');
+    self.log('return robot');
     return robotPromise;
   }
 
