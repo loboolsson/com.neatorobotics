@@ -5,7 +5,9 @@ const Botvac = require('node-botvac');
 
 class BotVacCommunity extends Homey.App {
 
-  credentials={};
+  user='';
+  pass=''
+  botvacClient=new Botvac.Client();
 
   /**
    * onInit is called when the app is initialized.
@@ -15,20 +17,79 @@ class BotVacCommunity extends Homey.App {
     const startCleaningAction = this.homey.flow.getActionCard('start_cleaning');
     startCleaningAction
       .registerRunListener(async (args, state) => {
-        return this.startCleaning(this.log);
+        this.log('Register start cleaning');
+        const promise = this.auth(this)
+          .then(result => {
+            this.log('done with auth', result);
+            return this.getRobot(this);
+          },
+          error => {
+            this.log('failed Auth', error);
+          })
+          .then(robot => {
+            this.log('fetched robot', robot);
+          }, error => {
+            this.log('failed auth', error);
+          });
+        return promise;
       });
 
     const stopCleaningAction = this.homey.flow.getActionCard('stop_cleaning');
     stopCleaningAction
       .registerRunListener(async (args, state) => {
-        return this.stopCleaning(this.log);
+        return this.auth(this);
       });
 
     // Get settings
-    this.credentials.user = this.homey.settings.get('username');
-    this.credentials.pass = this.homey.settings.get('password');
+    this.user = this.homey.settings.get('username');
+    this.pass = this.homey.settings.get('password');
 
     this.log('BotVacCommunity has been initialized');
+  }
+
+  /**
+   * Abstract authorization
+   */
+  auth(parent) {
+    parent.log('Run auth');
+    const authPromise = new Promise((resolve, reject) => {
+      parent.log('In the promise');
+      parent.botvacClient.authorize(parent.user, parent.pass, true, error => {
+        if (error) {
+          parent.log('Auth error', error);
+          reject(error);
+        } else {
+          parent.log('Auth success', error);
+          resolve(true);
+        }
+      });
+    });
+    parent.log('return auth');
+    return authPromise;
+  }
+
+  /**
+   * Abstract authorization
+   */
+  getRobot(parent) {
+    parent.log('Run robots');
+    const robotPromise = new Promise((resolve, reject) => {
+      parent.log('In the robot promise');
+      parent.botvacClient.getRobots((error, robots) => {
+        if (error) {
+          parent.log('Error getting robots', error);
+          reject(error);
+        } else if (!robots) {
+          parent.log('0 robots returned', error);
+          reject(error);
+        } else {
+          const robot = robots[0];
+          resolve(robot);
+        }
+      });
+    });
+    parent.log('return robot');
+    return robotPromise;
   }
 
   /**
