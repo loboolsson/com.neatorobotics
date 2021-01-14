@@ -38,5 +38,24 @@
         }
       }
     ]
-  }
+  },
+  "drivers": [
+    {
+      "id": "botvac",
+      "name": {
+        "en": "BotVac"
+      },
+      "class": "vacuumcleaner",
+      "capabilities": [
+        "measure_battery",
+        "alarm_battery",
+        "onoff",
+        "vacuumcleaner_state"
+      ],
+      "images": {
+        "large": "/drivers/botvac/assets/images/large.png",
+        "small": "/drivers/botvac/assets/images/small.png"
+      }
+    }
+  ]
 }
