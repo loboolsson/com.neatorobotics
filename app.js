@@ -18,16 +18,14 @@ class BotVacCommunity extends Homey.App {
     startCleaningAction
       .registerRunListener(async (args, state) => {
         this.log('Register start cleaning');
-        const promise = this.startCleaning();
-        return promise;
+        return this.startCleaning();
       });
 
     const stopCleaningAction = this.homey.flow.getActionCard('stop_cleaning');
     stopCleaningAction
       .registerRunListener(async (args, state) => {
         this.log('Register stop cleaning');
-        const promise = this.dockBotvac();
-        return promise;
+        return this.stopCleaning();
       });
 
     // Get settings
@@ -147,42 +145,29 @@ class BotVacCommunity extends Homey.App {
     }
     const stopCleaningPromise = new Promise((resolve, reject) => {
       // Cleaning must be paused, not stopped, before it can be sent to dock
-      // eslint-disable-next-line no-shadow
       robot.pauseCleaning((error, result) => {
         if (error) {
           self.log(`${robot.name} could not pause`);
           reject(error);
         }
         self.log(`${robot.name} was paused`);
-
-        // eslint-disable-next-line no-shadow
-        function sendToDock(robot, retries, log) {
-          if (retries > 0) {
-            // eslint-disable-next-line no-shadow, consistent-return
-            robot.getState((error, state) => {
-              if (error) {
-                return Promise.resolve(false);
-              }
-              if (state && state.availableCommands) {
-                log(state.availableCommands);
-                if (state.availableCommands.goToBase) {
-                  robot.sendToBase();
-                  log(`${robot.name} will return to base`);
-                  return Promise.resolve(true);
-                }
-
-                // If we cannot send to base, try again
-                retries--;
-                return sendToDock(robot, retries, log);
-              }
-            });
-          }
-          log(`${robot.name} cannot return to base`);
-          return Promise.resolve(false);
-        }
         // It can take significant time from BotVac Pause until it can be sent to dock.
-        // Resolving this with recursive retries for now
-        return sendToDock(robot, 50, self.log);
+        // Resolving this with recursive loop for now
+        (async function loop(stopCleaningScope) {
+          const iMax = 30;
+          for (let i = 0; i < iMax; i++) {
+            await stopCleaningScope.dockBotvac()
+              .then(success => {
+                i = iMax;
+                resolve(success);
+              }, fail => {
+                stopCleaningScope.log(`Dock attempt ${i} failed: ${fail}`);
+              });
+          }
+          self.log(`Could not dock after ${iMax} tries`);
+          // eslint-disable-next-line prefer-promise-reject-errors
+          reject(`Could not dock after ${iMax} tries`);
+        }(self));
       });
     });
 
