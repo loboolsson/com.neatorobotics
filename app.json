@@ -1,8 +1,9 @@
 {
   "id": "com.neato.botvac.community",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "compatibility": ">=5.0.0",
   "sdk": 3,
+  "brandColor": "#f2612c",
   "name": {
     "en": "Neato BotVac Community"
   },

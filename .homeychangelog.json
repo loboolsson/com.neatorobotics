@@ -4,5 +4,8 @@
   },
   "0.0.2": {
     "en": "Updated icon and image assets"
+  },
+  "0.0.3": {
+    "en": "Improved code structure and formatting compliance"
   }
 }
