@@ -26,7 +26,7 @@ class BotVacCommunity extends Homey.App {
     stopCleaningAction
       .registerRunListener(async (args, state) => {
         this.log('Register stop cleaning');
-        const promise = this.stopCleaning();
+        const promise = this.dockBotvac();
         return promise;
       });
 
@@ -107,7 +107,7 @@ class BotVacCommunity extends Homey.App {
     const cleaningPromise = new Promise((resolve, reject) => {
       robot.getState((error, state) => {
         if (error) {
-          self.log('Error in getting state');
+          self.log('Error when getting state');
           reject(error);
         }
         if (!state || !state.availableCommands) {
@@ -187,6 +187,42 @@ class BotVacCommunity extends Homey.App {
     });
 
     return stopCleaningPromise;
+  }
+
+  /**
+   * Send BotVac to dock.
+   */
+  async dockBotvac() {
+    const self = this;
+    let robot;
+
+    self.log('stopCleaning function call');
+    try {
+      robot = await this.getRobot();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    const dockPromise = new Promise((resolve, reject) => {
+      robot.getState((error, state) => {
+        if (error) {
+          self.log('Error when getting state');
+          reject(error);
+        }
+        if (state && state.availableCommands) {
+          self.log(state.availableCommands);
+        }
+        if (state && state.availableCommands && state.availableCommands.goToBase) {
+          robot.sendToBase();
+          self.log(`${robot.name} will return to base`);
+          resolve(true);
+        } else {
+          self.log(`${robot.name} cannot return to base`);
+          // eslint-disable-next-line prefer-promise-reject-errors
+          reject(`${robot.name} cannot return to base`);
+        }
+      });
+    });
+    return dockPromise;
   }
 
 }
