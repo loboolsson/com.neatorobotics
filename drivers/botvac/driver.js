@@ -2,7 +2,7 @@
 
 const Homey = require('homey');
 
-class MyDriver extends Homey.Driver {
+class BotvacDriver extends Homey.Driver {
 
   /**
    * onInit is called when the driver is initialized.
@@ -17,6 +17,7 @@ class MyDriver extends Homey.Driver {
    * This should return an array with the data of devices that are available for pairing.
    */
   async onPairListDevices() {
+    this.log('Paring successfull');
     return [
       // Example device data, note that `store` is optional
       // {
@@ -33,4 +34,4 @@ class MyDriver extends Homey.Driver {
 
 }
 
-module.exports = MyDriver;
+module.exports = BotvacDriver;

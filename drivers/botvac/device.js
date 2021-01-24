@@ -2,20 +2,22 @@
 
 const Homey = require('homey');
 
-class MyDevice extends Homey.Device {
+class BotvacDevice extends Homey.Device {
 
   /**
    * onInit is called when the device is initialized.
    */
   async onInit() {
-    this.log('MyDevice has been initialized');
+    this.log('BotvacDevice has been initialized');
+    this.log('Name:', this.getName());
+    this.log('Class:', this.getClass());
   }
 
   /**
    * onAdded is called when the user adds the device, called just after pairing.
    */
   async onAdded() {
-    this.log('MyDevice has been added');
+    this.log('BotvacDevice has been added');
   }
 
   /**
@@ -27,7 +29,7 @@ class MyDevice extends Homey.Device {
    * @returns {Promise<string|void>} return a custom message that will be displayed
    */
   async onSettings({ oldSettings, newSettings, changedKeys }) {
-    this.log('MyDevice settings where changed');
+    this.log('BotvacDevice settings where changed');
   }
 
   /**
@@ -36,16 +38,16 @@ class MyDevice extends Homey.Device {
    * @param {string} name The new name
    */
   async onRenamed(name) {
-    this.log('MyDevice was renamed');
+    this.log('BotvacDevice was renamed');
   }
 
   /**
    * onDeleted is called when the user deleted the device.
    */
   async onDeleted() {
-    this.log('MyDevice has been deleted');
+    this.log('BotvacDevice has been deleted');
   }
 
 }
 
-module.exports = MyDevice;
+module.exports = BotvacDevice;
