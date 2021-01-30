@@ -1,14 +1,27 @@
 'use strict';
 
 const Homey = require('homey');
+const BotvacLibrary = require('../../lib/Botvac');
 
 class BotvacDriver extends Homey.Driver {
+
+  botvacLibrary={};
 
   /**
    * onInit is called when the driver is initialized.
    */
   async onInit() {
     this.log('MyDriver has been initialized');
+    // Init BotvacLibrary
+    try {
+      this.botvacLibrary = new BotvacLibrary(
+        this.homey.settings.get('username'),
+        this.homey.settings.get('password'),
+        this.log,
+      );
+    } catch (error) {
+      this.log('Botvac initiated with error', error);
+    }
   }
 
   /**
@@ -18,18 +31,24 @@ class BotvacDriver extends Homey.Driver {
    */
   async onPairListDevices() {
     this.log('Listing devices');
-    return [
-      // Example device data, note that `store` is optional
-      // {
-      //   name: 'My Device',
-      //   data: {
-      //     id: 'my-device',
-      //   },
-      //   store: {
-      //     address: '127.0.0.1',
-      //   },
-      // },
-    ];
+    const robots = await this.botvacLibrary.getAllRobots();
+    const listDevices = [];
+
+    this.log('list devices', listDevices);
+
+    for (const robot of robots) {
+      listDevices.push(
+        {
+          name: robot.name,
+          data: {
+            id: robot._serial,
+          },
+        },
+      );
+      this.log('list devices', listDevices);
+    }
+
+    return listDevices;
   }
 
 }
