@@ -1,16 +1,62 @@
 'use strict';
 
 const Homey = require('homey');
+const BotvacLibrary = require('../../lib/Botvac');
 
 class BotvacDevice extends Homey.Device {
+
+  botvacLibrary={};
 
   /**
    * onInit is called when the device is initialized.
    */
   async onInit() {
+    // Init BotvacLibrary
+    try {
+      this.botvacLibrary = new BotvacLibrary(
+        this.homey.settings.get('username'),
+        this.homey.settings.get('password'),
+        this.log,
+      );
+    } catch (error) {
+      this.log('Botvac initiated with error', error);
+    }
+
     this.log('BotvacDevice has been initialized');
     this.log('Name:', this.getName());
     this.log('Class:', this.getClass());
+    this.log('id:', this.getAppId());
+    this.log('state:', this.getState());
+    this.log('settings:', this.getSettings());
+    this.log('data:', this.getData());
+    // this.log('object:', this);
+    // Set current status on device
+    await this.setDeviceState();
+    // register a capability listener
+    this.registerCapabilityListener(
+      'vacuumcleaner_state',
+      this.onVacuumcleanerState.bind(this),
+    );
+  }
+
+  async setDeviceState() {
+    this.log('set Status');
+    const data = this.getData();
+    const robot = await this.botvacLibrary.getRobot(data.id);
+    this.log(robot);
+    this.setCapabilityValue('onoff', true).catch(this.error);
+    this.setCapabilityValue('vacuumcleaner_state', 'docked').catch(this.error);
+  }
+
+  // this method is called when the Device has requested a state change (turned on or off)
+  async onVacuumcleanerState(value, opts) {
+    this.log('onVacuumcleanerState');
+    this.log('value', value);
+    this.log('opts', opts);
+    // ... set value to real device, e.g.
+    // await setMyDeviceState({ on: value });
+    // or, throw an error
+    // throw new Error('Switching the device failed!');
   }
 
   /**
@@ -47,6 +93,14 @@ class BotvacDevice extends Homey.Device {
   async onDeleted() {
     this.log('BotvacDevice has been deleted');
   }
+
+  // getState() {
+  //   const baseState = super.getState();
+  //   baseState.vacuumcleaner_state = 'cleaning';
+  //   // baseState.onoff = false;
+  //
+  //   return baseState;
+  // }
 
 }
 
