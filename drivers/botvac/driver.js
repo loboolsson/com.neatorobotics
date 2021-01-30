@@ -17,7 +17,7 @@ class BotvacDriver extends Homey.Driver {
    * This should return an array with the data of devices that are available for pairing.
    */
   async onPairListDevices() {
-    this.log('Paring successfull');
+    this.log('Listing devices');
     return [
       // Example device data, note that `store` is optional
       // {

@@ -9,5 +9,10 @@
     "eslint": "^7.17.0",
     "eslint-config-athom": "^2.1.0",
     "homey": "^2.9.4"
+  },
+  "scripts": {
+    "run": "npx eslint --fix && homey app run",
+    "install": "npx eslint --fix && homey app install",
+    "reset": "git checkout main && homey app install"
   }
 }
