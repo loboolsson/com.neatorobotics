@@ -5,6 +5,9 @@ This app supports:
 * The entire Neato BotVac connected series
 
 ## What's new
+### v1.0.4
+[Ownership] This app has switched ownership from [Athom B.V.](https://github.com/athombv) to [Lobo Olsson](https://github.com/loboolsson)
+
 ### v1.0.3
 [Bugfix] Fixed a bug with setting the polling interval after changing it through settings
 
