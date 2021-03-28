@@ -13,20 +13,21 @@ class BotVacDevice extends Homey.Device {
     this.log('BotVac name:', this.getName());
     this.log('BotVac serial:', this.data.id);
 
-    this.getSetting('poll_interval') ? this.pollInterval = this.getSetting('poll_interval') * 1000 : this.pollInterval = 10000;
+    // Get pollinterval or set it to the default of 10 if it doesn't exist
+    this.pollInterval = (this.getSetting('poll_interval') || 10) * 1000;
 
     this._init();
   }
 
   onSettings(oldSettings, newSettings, changedKeys, callback) {
-      if (changedKeys.includes('poll_interval')) {
-        this.pollInterval = newSettings.poll_interval * 1000;
-        clearInterval(this._pollStateInterval);
+    if (changedKeys.includes('poll_interval')) {
+      this.pollInterval = newSettings.poll_interval * 1000;
+      clearInterval(this._pollStateInterval);
 
-        this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
-      }
+      this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
+    }
 
-      callback(null, true);
+    callback(null, true);
   }
 
   onDeleted() {
@@ -36,9 +37,8 @@ class BotVacDevice extends Homey.Device {
   }
 
   async _onPollState() {
-
     try {
-      let state = await this.connection.getState();
+      const state = await this.connection.getState();
 
       // Clear errors first
       if (!this.connection.hasError) {
@@ -70,7 +70,9 @@ class BotVacDevice extends Homey.Device {
     }
   }
 
+  // eslint-disable-next-line consistent-return
   async _onCapabilityVaccumState(value) {
+    // eslint-disable-next-line default-case
     switch (value) {
       case 'cleaning':
         await this.connection.startCleaning();
@@ -97,7 +99,7 @@ class BotVacDevice extends Homey.Device {
     this.connection = new NeatoRobot({
       name: this.getName(),
       serial: this.data.id,
-      secret_key: this.store.secret
+      secret_key: this.store.secret,
     });
 
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
@@ -107,6 +109,7 @@ class BotVacDevice extends Homey.Device {
 
     this.log('BotVac added');
   }
+
 }
 
 module.exports = BotVacDevice;
