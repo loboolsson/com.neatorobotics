@@ -1,40 +1,40 @@
 'use strict';
 
 const Homey = require('homey');
-const NeatoApi = require('../../lib/NeatoApi');
+const BotvacLibrary = require('../../lib/Botvac');
 
-class BotVacDriver extends Homey.Driver {
+class BotVacDriver extends Homey.Driver { 
 
-  async onInit() {
-    this.neatoApi = new NeatoApi();
-  }
+  robots = [];
 
-  onPair(socket) {
-    const apiUrl = this.neatoApi.getOAuth2AuthorizationUrl();
-    const neatoOAuthCallback = new Homey.CloudOAuth2Callback(apiUrl);
+  onPair( socket ) {
+    let username = '';
+    let password = '';
+    
+    socket.on('login', ( data, callback ) => {
+        username = data.username;
+        password = data.password;
+        
+        try {
+          this.BotvacLibrary = new BotvacLibrary(username, password, this.log)
+        } catch(err){
+          callback(err);
+        };
 
-    neatoOAuthCallback
-      .on('url', url => {
-        socket.emit('url', url);
-      })
-      .on('code', async code => {
-        const tokensObject = await this.neatoApi.exchangeCode(code);
-        this.neatoApi.setToken(tokensObject);
-        socket.emit('authorized');
-      })
-      .generate()
-      .catch(err => {
-        socket.emit('error', err);
-      });
-
-    socket.on('list_devices', async (data, callback) => {
-      const pairingDevices = [];
-      const robots = await this.neatoApi.getRobots();
-
-      for (let i = 0; i < robots.length; i++) {
-        const robot = robots[i];
-
-        pairingDevices.push({
+        //Check if we can get the list of devices. If not assume credentials are invalid
+        this.BotvacLibrary.getAllRobots()
+          .then(robots => {
+            this.robots = robots;
+            callback( null, true );
+          })
+          .catch(err => {
+            callback(err);
+          });
+    });
+    
+    socket.on('list_devices', ( data, callback ) => {
+      const pairingDevices = this.robots.map(robot =>{
+        return {
           name: robot.name,
           data: {
             id: robot._serial,
@@ -42,13 +42,12 @@ class BotVacDriver extends Homey.Driver {
           store: {
             secret: robot._secret,
           },
-        });
-      }
-
-      callback(null, pairingDevices);
+        }
+      });
+      callback( null, pairingDevices );
     });
   }
-
 }
 
 module.exports = BotVacDriver;
+2
