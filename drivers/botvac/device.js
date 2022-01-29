@@ -107,7 +107,7 @@ class BotVacDevice extends Homey.Device {
     this._onPollState();
     this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
 
-    this.log('BotVac added');
+    this.log(`BotVac added: ${this.getName()}`);
   }
 
 }
