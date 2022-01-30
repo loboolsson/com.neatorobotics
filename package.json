@@ -9,12 +9,10 @@
   "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
     "eslint": "^8.7.0",
-    "eslint-config-athom": "^2.1.0",
+    "eslint-config-athom": "^3.0.1",
     "homey": "^2.9.4"
   },
   "dependencies": {
-    "form-data": "^2.3.2",
-    "node-botvac": "^0.4.0",
-    "node-fetch": "^2.0.0"
+    "node-botvac": "^0.4.0"
   }
 }

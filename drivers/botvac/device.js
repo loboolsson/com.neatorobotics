@@ -1,53 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
-const BotvacRobot = require('../../lib/BotvacRobot')
-
-//Response codes as defined by Neato 
-// https://developers.neatorobotics.com/api/robot-remote-protocol/request-response-formats
-const states = {
-  IDLE: 1,
-  BUSY: 2,
-  PAUSED: 3,
-  ERROR: 4,
-};
-const actions = {
-  HOUSE_CLEANING: 1,
-  SPOT_CLEANING: 2,
-  MANUAL_CLEANING: 3,
-  DOCKING: 4,
-  USER_MENU_ACTIVE: 5,
-  SUSPENDED_CLEANING: 6,
-  UPDATING: 7,
-  COPYING_LOGS: 8,
-  RECOVERING_LOCATION: 9,
-  IEC_TEST: 10,
-};
-const cleaningCategories = {
-  MANUAL: 1,
-  HOUSE: 2,
-  SPOT: 3,
-};
-const cleaningModes = {
-  ECO: 1,
-  TURBO: 2,
-};
-// How often to clean a spot
-const cleaningModifier = {
-  ONCE: 1,
-  TWICE: 2,
-};
-const navigationModes = {
-  NORMAL: 1,
-  EXTRA_CARE: 2,
-};
-const commands = {
-  CLEAN: 'startCleaning',
-  RESUME: 'resumeCleaning',
-  PAUSE: 'pauseCleaning',
-  STOP: 'stopCleaning',
-  DOCK: 'sendToBase',
-};
+const BotvacRobot = require('../../lib/BotvacRobot');
 
 class BotVacDevice extends Homey.Device {
 
@@ -81,27 +35,27 @@ class BotVacDevice extends Homey.Device {
     try {
       // Check robot's state
       const state = await this.robot.getState();
-      //Default to available
+      // Default to available
       this.setAvailable();
 
       this.log(`state: ${JSON.stringify(state)}`);
 
-      this.setCapabilityValue('measure_battery', state.details.charge);
+      this.setCapabilityValue('measure_battery', await this.robot.getBatteryCharge());
 
-      if (state.state === states.ERROR ) {
+      if (await this.robot.getError()) {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
-        this.setUnavailable(Homey.__(state.error));
+        this.setUnavailable(Homey.__(await this.robot.getError()));
         this.log('state error');
-      } else if (state.details.charging) {
+      } else if (await this.robot.isCharging()) {
         this.setCapabilityValue('vacuumcleaner_state', 'charging');
         this.log('state charge');
-      } else if (state.details.isDocked) {
+      } else if (await this.robot.isDocked()) {
         this.setCapabilityValue('vacuumcleaner_state', 'docked');
         this.log('state docked');
-      } else if (state.state === states.BUSY && state.action === actions.SPOT_CLEANING) {
+      } else if (await this.robot.isSpotCleaning()) {
         this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
         this.log('state spot cleaning');
-      } else if (state.state === states.BUSY && state.action !== actions.SPOT_CLEANING) {
+      } else if (await this.robot.isCleaning()) {
         this.setCapabilityValue('vacuumcleaner_state', 'cleaning');
         this.log('state normal cleaning');
       } else {
@@ -127,8 +81,8 @@ class BotVacDevice extends Homey.Device {
       case 'docked':
       case 'charging':
         try {
-          await this.robot.stopAndDock();
-        } catch(error) {
+          await this.robot.dockBotvac();
+        } catch (error) {
           this.setCapabilityValue('vacuumcleaner_state', 'stopped');
           return Promise.reject(Homey.__('cannot_return'));
         }
