@@ -1,7 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
-const BotvacLibrary = require('../../lib/Botvac');
+const BotvacUser = require('../../lib/BotvacUser');
 
 class BotVacDriver extends Homey.Driver { 
 
@@ -14,22 +14,21 @@ class BotVacDriver extends Homey.Driver {
     socket.on('login', ( data, callback ) => {
         username = data.username;
         password = data.password;
-        
         try {
-          this.BotvacLibrary = new BotvacLibrary(username, password, this.log)
+          //Check if we can get the list of devices. If not assume credentials are invalid
+          this.BotvacUser = new BotvacUser(username, password, this.log)
+          this.BotvacUser.getAllRobots()
+            .then(robots => {
+              this.robots = robots;
+              callback( null, true );
+            })
+            .catch(err => {
+              callback(err);
+            });
         } catch(err){
+          console.log(err);
           callback(err);
         };
-
-        //Check if we can get the list of devices. If not assume credentials are invalid
-        this.BotvacLibrary.getAllRobots()
-          .then(robots => {
-            this.robots = robots;
-            callback( null, true );
-          })
-          .catch(err => {
-            callback(err);
-          });
     });
     
     socket.on('list_devices', ( data, callback ) => {
@@ -50,4 +49,3 @@ class BotVacDriver extends Homey.Driver {
 }
 
 module.exports = BotVacDriver;
-2

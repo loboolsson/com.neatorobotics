@@ -1,7 +1,53 @@
 'use strict';
 
 const Homey = require('homey');
-const NeatoRobot = require('../../lib/NeatoRobot');
+const BotvacRobot = require('../../lib/BotvacRobot')
+
+//Response codes as defined by Neato 
+// https://developers.neatorobotics.com/api/robot-remote-protocol/request-response-formats
+const states = {
+  IDLE: 1,
+  BUSY: 2,
+  PAUSED: 3,
+  ERROR: 4,
+};
+const actions = {
+  HOUSE_CLEANING: 1,
+  SPOT_CLEANING: 2,
+  MANUAL_CLEANING: 3,
+  DOCKING: 4,
+  USER_MENU_ACTIVE: 5,
+  SUSPENDED_CLEANING: 6,
+  UPDATING: 7,
+  COPYING_LOGS: 8,
+  RECOVERING_LOCATION: 9,
+  IEC_TEST: 10,
+};
+const cleaningCategories = {
+  MANUAL: 1,
+  HOUSE: 2,
+  SPOT: 3,
+};
+const cleaningModes = {
+  ECO: 1,
+  TURBO: 2,
+};
+// How often to clean a spot
+const cleaningModifier = {
+  ONCE: 1,
+  TWICE: 2,
+};
+const navigationModes = {
+  NORMAL: 1,
+  EXTRA_CARE: 2,
+};
+const commands = {
+  CLEAN: 'startCleaning',
+  RESUME: 'resumeCleaning',
+  PAUSE: 'pauseCleaning',
+  STOP: 'stopCleaning',
+  DOCK: 'sendToBase',
+};
 
 class BotVacDevice extends Homey.Device {
 
@@ -9,9 +55,6 @@ class BotVacDevice extends Homey.Device {
     this.driver = this.getDriver();
     this.data = this.getData();
     this.store = this.getStore();
-
-    this.log('BotVac name:', this.getName());
-    this.log('BotVac serial:', this.data.id);
 
     // Get pollinterval or set it to the default of 10 if it doesn't exist
     this.pollInterval = (this.getSetting('poll_interval') || 10) * 1000;
@@ -31,39 +74,40 @@ class BotVacDevice extends Homey.Device {
   }
 
   onDeleted() {
-    this.log('BotVac removed');
-    this.log('BotVac name:', this.getName());
-    this.log('BotVac serial:', this.data.id);
+    this.log(`BotVac removed: ${this.getName()} - ${this.data.id}`);
   }
 
   async _onPollState() {
     try {
-      const state = await this.connection.getState();
-
-      // Clear errors first
-      if (!this.connection.hasError) {
-        this.setAvailable();
-      }
-
       // Check robot's state
-      if (this.connection.isCleaning) {
-        this.setCapabilityValue('vacuumcleaner_state', 'cleaning');
-      } else if (this.connection.isSpotCleaning) {
-        this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
-      } else if (this.connection.isCharging) {
-        this.setCapabilityValue('vacuumcleaner_state', 'charging');
-      } else if (this.connection.isDocked) {
-        this.setCapabilityValue('vacuumcleaner_state', 'docked');
-      } else if (this.connection.hasError) {
+      const state = await this.robot.getState();
+      //Default to available
+      this.setAvailable();
+
+      this.log(`state: ${JSON.stringify(state)}`);
+
+      this.setCapabilityValue('measure_battery', state.details.charge);
+
+      if (state.state === states.ERROR ) {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
         this.setUnavailable(Homey.__(state.error));
+        this.log('state error');
+      } else if (state.details.charging) {
+        this.setCapabilityValue('vacuumcleaner_state', 'charging');
+        this.log('state charge');
+      } else if (state.details.isDocked) {
+        this.setCapabilityValue('vacuumcleaner_state', 'docked');
+        this.log('state docked');
+      } else if (state.state === states.BUSY && state.action === actions.SPOT_CLEANING) {
+        this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
+        this.log('state spot cleaning');
+      } else if (state.state === states.BUSY && state.action !== actions.SPOT_CLEANING) {
+        this.setCapabilityValue('vacuumcleaner_state', 'cleaning');
+        this.log('state normal cleaning');
       } else {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
+        this.log('state normal stop');
       }
-
-      // Set battery charge
-      this.setCapabilityValue('measure_battery', this.connection.charge);
-      this.setAvailable();
     } catch (err) {
       this.error(err);
       this.setUnavailable('Neato API not reachable');
@@ -75,39 +119,35 @@ class BotVacDevice extends Homey.Device {
     // eslint-disable-next-line default-case
     switch (value) {
       case 'cleaning':
-        await this.connection.startCleaning();
+        await this.robot.startCleaningCycle();
         break;
       case 'spot_cleaning':
-        await this.connection.startSpotCleaning();
+        await this.robot.startSpotCleaningCycle();
         break;
       case 'docked':
       case 'charging':
-        if (!this.connection.canGoToBase) {
-          await this.connection.pauseCleaning();
+        try {
+          await this.robot.stopAndDock();
+        } catch(error) {
           this.setCapabilityValue('vacuumcleaner_state', 'stopped');
           return Promise.reject(Homey.__('cannot_return'));
         }
-        await this.connection.sendToBase();
         break;
       case 'stopped':
-        await this.connection.pauseCleaning();
+        await this.robot.stopCleaningCycle();
         break;
     }
   }
 
   async _init() {
-    this.connection = new NeatoRobot({
-      name: this.getName(),
-      serial: this.data.id,
-      secret_key: this.store.secret,
-    });
+    this.robot = new BotvacRobot(this);
 
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
 
     this._onPollState();
     this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
 
-    this.log(`BotVac added: ${this.getName()}`);
+    this.log(`BotVac added: ${this.getName()} - ${this.data.id}`);
   }
 
 }
