@@ -1,7 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
-const BotvacLibrary = require('../../lib/Botvac');
+const BotvacUser = require('../../lib/BotvacUser');
 
 class BotVacDriver extends Homey.Driver { 
 
@@ -16,8 +16,8 @@ class BotVacDriver extends Homey.Driver {
         password = data.password;
         try {
           //Check if we can get the list of devices. If not assume credentials are invalid
-          this.BotvacLibrary = new BotvacLibrary(username, password, this.log)
-          this.BotvacLibrary.getAllRobots()
+          this.BotvacUser = new BotvacUser(username, password, this.log)
+          this.BotvacUser.getAllRobots()
             .then(robots => {
               this.robots = robots;
               callback( null, true );
