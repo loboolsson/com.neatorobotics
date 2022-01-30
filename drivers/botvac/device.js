@@ -1,9 +1,9 @@
 'use strict';
 
 const Homey = require('homey');
-const BotvacRobot = require('../../lib/BotvacRobot')
+const BotvacRobot = require('../../lib/BotvacRobot');
 
-//Response codes as defined by Neato 
+// Response codes as defined by Neato
 // https://developers.neatorobotics.com/api/robot-remote-protocol/request-response-formats
 const states = {
   IDLE: 1,
@@ -22,31 +22,6 @@ const actions = {
   COPYING_LOGS: 8,
   RECOVERING_LOCATION: 9,
   IEC_TEST: 10,
-};
-const cleaningCategories = {
-  MANUAL: 1,
-  HOUSE: 2,
-  SPOT: 3,
-};
-const cleaningModes = {
-  ECO: 1,
-  TURBO: 2,
-};
-// How often to clean a spot
-const cleaningModifier = {
-  ONCE: 1,
-  TWICE: 2,
-};
-const navigationModes = {
-  NORMAL: 1,
-  EXTRA_CARE: 2,
-};
-const commands = {
-  CLEAN: 'startCleaning',
-  RESUME: 'resumeCleaning',
-  PAUSE: 'pauseCleaning',
-  STOP: 'stopCleaning',
-  DOCK: 'sendToBase',
 };
 
 class BotVacDevice extends Homey.Device {
@@ -81,14 +56,14 @@ class BotVacDevice extends Homey.Device {
     try {
       // Check robot's state
       const state = await this.robot.getState();
-      //Default to available
+      // Default to available
       this.setAvailable();
 
       this.log(`state: ${JSON.stringify(state)}`);
 
       this.setCapabilityValue('measure_battery', state.details.charge);
 
-      if (state.state === states.ERROR ) {
+      if (state.state === states.ERROR) {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
         this.setUnavailable(Homey.__(state.error));
         this.log('state error');
@@ -128,7 +103,7 @@ class BotVacDevice extends Homey.Device {
       case 'charging':
         try {
           await this.robot.stopAndDock();
-        } catch(error) {
+        } catch (error) {
           this.setCapabilityValue('vacuumcleaner_state', 'stopped');
           return Promise.reject(Homey.__('cannot_return'));
         }
