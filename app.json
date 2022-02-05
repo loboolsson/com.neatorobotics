@@ -1,8 +1,9 @@
 {
   "id": "com.neatorobotics",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "compatibility": ">=1.5.0",
   "sdk": 2,
+  "brandColor": "#ff6021",
   "name": {
     "en": "Neato BotVac"
   },
@@ -38,6 +39,9 @@
       },
       "class": "vacuumcleaner",
       "capabilities": ["measure_battery", "vacuumcleaner_state"],
+      "energy": {
+        "batteries": [ "INTERNAL" ]
+      },
       "pair": [
         {
           "id": "OAuthLogin",

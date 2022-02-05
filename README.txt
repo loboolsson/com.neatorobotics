@@ -5,6 +5,9 @@ This app supports:
 * The entire Neato BotVac connected series
 
 ## What's new
+### v1.1.0
+[Feature] Added device specific settings for Navigation mode, No-go lines and EcoMode. 
+
 ### v1.0.4
 [Ownership] This app has switched ownership from [Athom B.V.](https://github.com/athombv) to [Lobo Olsson](https://github.com/loboolsson)
 
