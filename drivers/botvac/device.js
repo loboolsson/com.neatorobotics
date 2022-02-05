@@ -23,6 +23,7 @@ class BotVacDevice extends Homey.Device {
 
       this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
     }
+    this.robot.setSettings(newSettings);
 
     callback(null, true);
   }
@@ -33,38 +34,30 @@ class BotVacDevice extends Homey.Device {
 
   async _onPollState() {
     try {
-      // Check robot's state
-      const state = await this.robot.getState();
       // Default to available
       this.setAvailable();
-
-      this.log(`state: ${JSON.stringify(state)}`);
 
       this.setCapabilityValue('measure_battery', await this.robot.getBatteryCharge());
 
       if (await this.robot.getError()) {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
         this.setUnavailable(Homey.__(await this.robot.getError()));
-        this.log('state error');
+        this.log(`BotVac error: ${this.getName()} - ${await this.robot.getError()}`);
       } else if (await this.robot.isCharging()) {
         this.setCapabilityValue('vacuumcleaner_state', 'charging');
-        this.log('state charge');
       } else if (await this.robot.isDocked()) {
         this.setCapabilityValue('vacuumcleaner_state', 'docked');
-        this.log('state docked');
       } else if (await this.robot.isSpotCleaning()) {
         this.setCapabilityValue('vacuumcleaner_state', 'spot_cleaning');
-        this.log('state spot cleaning');
       } else if (await this.robot.isCleaning()) {
         this.setCapabilityValue('vacuumcleaner_state', 'cleaning');
-        this.log('state normal cleaning');
       } else {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
-        this.log('state normal stop');
       }
     } catch (err) {
       this.error(err);
       this.setUnavailable('Neato API not reachable');
+      this.log(`BotVac error: ${this.getName()} - Neato API not reachable`);
     }
   }
 
@@ -95,6 +88,7 @@ class BotVacDevice extends Homey.Device {
 
   async _init() {
     this.robot = new BotvacRobot(this);
+    this.robot.setSettings(this.getSettings());
 
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
 
