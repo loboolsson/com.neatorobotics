@@ -66,11 +66,49 @@
         {
           "id": "poll_interval",
           "type": "number",
+          "value": 10,
           "label": {
             "nl": "Polling interval voor de apparaatstatus",
-            "en": "Interval for polling the device state"
+            "en": "Polling interval for device state"
+          }
+        },
+        {
+          "id": "navigationMode",
+          "type": "radio",
+          "value": "1",
+          "label": {
+            "en": "Navigation Mode"
           },
-          "value": 10
+          "values": [
+            {
+              "id": "1",
+              "label": {
+                "en": "Normal"
+              }
+            },
+            {
+              "id": "2",
+              "label": {
+                "en": "Extra care"
+              }
+            }
+          ]
+        },
+        {
+          "id": "noGoLines",
+          "type": "checkbox",
+          "value": true,
+          "label": {
+            "en": "Enable no-go lines"
+          }
+        },
+        {
+          "id": "ecoMode",
+          "type": "checkbox",
+          "value": true,
+          "label": {
+            "en": "Enable ECO mode"
+          }
         }
       ]
     }
