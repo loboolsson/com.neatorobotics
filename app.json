@@ -1,8 +1,10 @@
 {
   "id": "com.neatorobotics",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "compatibility": ">=1.5.0",
-  "platforms": ["local"],
+  "platforms": [
+    "local"
+  ],
   "support": "mailto:lobo.olsson@gmail.com",
   "sdk": 2,
   "brandColor": "#ff6021",
@@ -17,8 +19,19 @@
     "appliances"
   ],
   "tags": {
-    "en": ["vacuumcleaner", "vacuum", "robot", "robotics", "neato"],
-    "nl": ["stofzuiger", "robot", "robots", "neato"]
+    "en": [
+      "vacuumcleaner",
+      "vacuum",
+      "robot",
+      "robotics",
+      "neato"
+    ],
+    "nl": [
+      "stofzuiger",
+      "robot",
+      "robots",
+      "neato"
+    ]
   },
   "images": {
     "small": "/assets/images/small.jpg",
@@ -39,12 +52,21 @@
         "small": "/drivers/botvac/assets/images/small.jpg",
         "large": "/drivers/botvac/assets/images/large.jpg"
       },
-      "platforms": ["local"],
-      "connectivity": ["lan"],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
       "class": "vacuumcleaner",
-      "capabilities": ["measure_battery", "vacuumcleaner_state"],
+      "capabilities": [
+        "measure_battery",
+        "vacuumcleaner_state"
+      ],
       "energy": {
-        "batteries": [ "INTERNAL" ]
+        "batteries": [
+          "INTERNAL"
+        ]
       },
       "pair": [
         {
