@@ -2,7 +2,7 @@
   "1.1.0": {
     "en": "[Feature] Added device specific settings for Navigation mode, No-go lines and EcoMode. "
   },
-  "1.1.1": {
-    "en": "Added device specific settings for Navigation mode, No-go lines and EcoMode."
+  "1.1.2": {
+    "en": "[Bug fix] Handled case were an error was returned despite an 'ok' answer from Neato servers"
   }
 }
