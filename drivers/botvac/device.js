@@ -15,16 +15,13 @@ class BotVacDevice extends Homey.Device {
     this._init();
   }
 
-  onSettings(oldSettings, newSettings, changedKeys, callback) {
-    if (changedKeys.includes('poll_interval')) {
-      this.pollInterval = newSettings.poll_interval * 1000;
+  onSettings(settingsEvent) {
+    if (settingsEvent.changedKeys.includes('poll_interval')) {
+      this.pollInterval = settingsEvent.newSettings.poll_interval * 1000;
       clearInterval(this._pollStateInterval);
-
       this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
     }
-    this.robot.setSettings(newSettings);
-
-    callback(null, true);
+    this.robot.setSettings(settingsEvent.newSettings);
   }
 
   onDeleted() {
@@ -87,10 +84,9 @@ class BotVacDevice extends Homey.Device {
 
   async _init() {
     this.robot = new BotvacRobot(this);
+
     this.robot.setSettings(this.getSettings());
-
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
-
     this._onPollState();
     this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
 
