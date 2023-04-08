@@ -6,11 +6,10 @@ const BotvacRobot = require('../../lib/BotvacRobot');
 class BotVacDevice extends Homey.Device {
 
   async onInit() {
-    this.driver = this.getDriver();
     this.data = this.getData();
     this.store = this.getStore();
 
-    // Get pollinterval or set it to the default of 10 if it doesn't exist
+    // Get pollinterval or set it to the default of 10 seconds if it doesn't exist
     this.pollInterval = (this.getSetting('poll_interval') || 10) * 1000;
 
     this._init();
