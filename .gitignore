@@ -1,5 +1,6 @@
 env.json
 node_modules
+com.neatorobotics.code-workspace
 
 # Added by Homey CLI
 /.homeybuild/

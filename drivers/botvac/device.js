@@ -42,7 +42,7 @@ class BotVacDevice extends Homey.Device {
       if (await this.robot.getError()) {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
         this.setUnavailable(Homey.__(await this.robot.getError()));
-        this.log(`BotVac error: ${this.getName()} - ${await this.robot.getError()}`);
+        this.log(`Device Driver error: ${this.getName()} - ${await this.robot.getState()}`);
       } else if (await this.robot.isCharging()) {
         this.setCapabilityValue('vacuumcleaner_state', 'charging');
       } else if (await this.robot.isDocked()) {
@@ -57,7 +57,7 @@ class BotVacDevice extends Homey.Device {
     } catch (err) {
       this.error(err);
       this.setUnavailable('Neato API not reachable');
-      this.log(`BotVac error: ${this.getName()} - Neato API not reachable`);
+      this.log(`Device Driver error: ${this.getName()} - Neato API not reachable`);
     }
   }
 

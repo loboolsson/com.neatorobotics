@@ -37,16 +37,16 @@ class BotVacDriver extends Homey.Driver {
   onPair(socket) {
     const neatoOAuthCallback = new Homey.CloudOAuth2Callback(this._oAuth2AuthUrl);
     neatoOAuthCallback
-      .on('url', url => {
+      .on('url', (url) => {
         socket.emit('url', url);
       })
-      .on('code', async code => {
+      .on('code', async (code) => {
         const tokensObject = await this.getOauthToken(code);
         this.BotvacUser = new BotvacUser(tokensObject.access_token, this.log);
         socket.emit('authorized');
       })
       .generate()
-      .catch(err => {
+      .catch((err) => {
         socket.emit('error', err);
       });
 
@@ -54,8 +54,8 @@ class BotVacDriver extends Homey.Driver {
       try {
         // Check if we can get the list of devices. If not assume credentials are invalid
         this.BotvacUser.getAllRobots()
-          .then(robots => {
-            const pairingDevices = robots.map(robot => {
+          .then((robots) => {
+            const pairingDevices = robots.map((robot) => {
               return {
                 name: robot.name,
                 data: {
@@ -68,7 +68,7 @@ class BotVacDriver extends Homey.Driver {
             });
             callback(null, pairingDevices);
           })
-          .catch(err => {
+          .catch((err) => {
             callback(err);
           });
       } catch (err) {
