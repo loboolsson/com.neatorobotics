@@ -4,7 +4,7 @@ const Homey = require('homey');
 const axios = require('axios').default;
 const BotvacUserLib = require('../../lib/BotvacUser');
 
-let BotvacUser;
+let AccessToken;
 
 class BotVacDriver extends Homey.Driver {
 
@@ -37,13 +37,14 @@ class BotVacDriver extends Homey.Driver {
   }
 
   async listDevices() {
-    if (!BotvacUser) {
+    if (!AccessToken) {
       throw new Error('Cannot list Neato devices!');
     }
 
     try {
       // Check if we can get the list of devices. If not throw error
-      const robots = await BotvacUser.getAllRobots();
+      const BotvacUser = new BotvacUserLib();
+      const robots = await BotvacUser.getAllRobots(AccessToken);
       const devices = robots.map((robot) => {
         return {
           name: robot.name,
@@ -75,7 +76,8 @@ class BotVacDriver extends Homey.Driver {
         // ... swap your code here for an access token
         const tokensObject = await this.getOauthToken(code);
         if (tokensObject && tokensObject.access_token) {
-          BotvacUser = new BotvacUserLib(tokensObject.access_token, this.log);
+          // BotvacUser = new BotvacUserLib(tokensObject.access_token);
+          AccessToken = tokensObject.access_token;
         } else {
           throw new Error('Cannot get access token from Neato!');
         }
