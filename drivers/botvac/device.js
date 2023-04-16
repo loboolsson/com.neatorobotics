@@ -30,16 +30,20 @@ class BotVacDevice extends Homey.Device {
 
   async _onPollState() {
     try {
-      // Default to available
-      this.setAvailable();
-
-      this.setCapabilityValue('measure_battery', await this.robot.getBatteryCharge());
-
-      if (await this.robot.getError()) {
+      // If we get an error, set state as stopped, device as unavaliable and return early.
+      const error = await this.robot.getError();
+      if (error) {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
-        this.setUnavailable(Homey.__(await this.robot.getError()));
+        this.setUnavailable(this.homey.__(error));
         this.log(`Device Driver error: ${this.getName()} - ${await this.robot.getState()}`);
-      } else if (await this.robot.isCharging()) {
+
+        return;
+      }
+
+      // If no errer, ddefault to available and set relevant status(es)
+      this.setAvailable();
+      this.setCapabilityValue('measure_battery', await this.robot.getBatteryCharge());
+      if (await this.robot.isCharging()) {
         this.setCapabilityValue('vacuumcleaner_state', 'charging');
       } else if (await this.robot.isDocked()) {
         this.setCapabilityValue('vacuumcleaner_state', 'docked');
@@ -59,26 +63,32 @@ class BotVacDevice extends Homey.Device {
 
   // eslint-disable-next-line consistent-return
   async _onCapabilityVaccumState(value) {
-    // eslint-disable-next-line default-case
-    switch (value) {
-      case 'cleaning':
-        await this.robot.startCleaningCycle();
-        break;
-      case 'spot_cleaning':
-        await this.robot.startSpotCleaningCycle();
-        break;
-      case 'docked':
-      case 'charging':
-        try {
+    // TODO
+    // We need to handle allowed/disallowed state transitions
+    // IE, we cannot force the bot to charge,
+    // so if it is already docked it cannot be switched to the charged state,
+    // and if it is charging in the doc we cannot have it be docked without charging
+    // We also cannot switch from normal cleaning to spot-cleaning on the fly
+    try {
+      // eslint-disable-next-line default-case
+      switch (value) {
+        case 'cleaning':
+          await this.robot.startCleaningCycle();
+          break;
+        case 'spot_cleaning':
+          await this.robot.startSpotCleaningCycle();
+          break;
+        case 'docked':
+        case 'charging':
           await this.robot.dockBotvac();
-        } catch (error) {
-          this.setCapabilityValue('vacuumcleaner_state', 'stopped');
-          return Promise.reject(Homey.__('cannot_return'));
-        }
-        break;
-      case 'stopped':
-        await this.robot.stopCleaningCycle();
-        break;
+          break;
+        case 'stopped':
+          await this.robot.stopCleaningCycle();
+          break;
+      }
+    } catch (error) {
+      this._onPollState();
+      return Promise.reject(this.homey.__(error));
     }
   }
 
