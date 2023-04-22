@@ -73,18 +73,14 @@ class BotVacDevice extends Homey.Device {
       // eslint-disable-next-line default-case
       switch (value) {
         case 'cleaning':
-          await this.robot.startCleaningCycle();
-          break;
+          return this.robot.startCleaningCycle();
         case 'spot_cleaning':
-          await this.robot.startSpotCleaningCycle();
-          break;
+          return this.robot.startSpotCleaningCycle();
         case 'docked':
         case 'charging':
-          await this.robot.dockBotvac();
-          break;
+          return this.robot.dockBotvac();
         case 'stopped':
-          await this.robot.stopCleaningCycle();
-          break;
+          return this.robot.stopCleaningCycle();
       }
     } catch (error) {
       this._onPollState();
