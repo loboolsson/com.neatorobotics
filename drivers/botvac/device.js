@@ -31,16 +31,13 @@ class BotVacDevice extends Homey.Device {
   async _onPollState() {
     try {
       // If we get an error, set state as stopped, device as unavaliable and return early.
-      const error = await this.robot.getError();
-      if (error) {
+      const robotError = await this.robot.getError();
+      if (robotError) {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
-        this.setUnavailable(this.homey.__(error));
-        this.log(`Device Driver error: ${this.getName()} - ${await this.robot.getState()}`);
-
-        return;
+        throw new Error(robotError);
       }
 
-      // If no errer, ddefault to available and set relevant status(es)
+      // If no error, default to available and set relevant status(es)
       this.setAvailable();
       this.setCapabilityValue('measure_battery', await this.robot.getBatteryCharge());
       if (await this.robot.isCharging()) {
@@ -54,10 +51,14 @@ class BotVacDevice extends Homey.Device {
       } else {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
       }
-    } catch (err) {
-      this.error(err);
-      this.setUnavailable('Neato API not reachable');
-      this.log(`Device Driver error: ${this.getName()} - Neato API not reachable`);
+    } catch (error) {
+      this.error('_onPollState');
+      this.error(error);
+      if (this.homey.app.debug) {
+        this.error(await this.robot.getState());
+      }
+      this.setUnavailable(error);
+      throw new Error(error);
     }
   }
 
@@ -83,8 +84,13 @@ class BotVacDevice extends Homey.Device {
           return this.robot.stopCleaningCycle();
       }
     } catch (error) {
+      this.error('_onCapabilityVaccumState');
+      this.error(error);
+      if (this.homey.app.debug) {
+        this.error(await this.robot.getState());
+      }
       this._onPollState();
-      return Promise.reject(this.homey.__(error));
+      throw new Error(error);
     }
   }
 
