@@ -5,30 +5,39 @@ const BotvacRobot = require('../../lib/BotvacRobot');
 
 class BotVacDevice extends Homey.Device {
 
+  pollStateBinding = null;
+  currentPollingInterval = 0;
+  pollingError = 0;
+
   async onInit() {
     this.data = this.getData();
     this.store = this.getStore();
-
-    // Get pollinterval or set it to the default of 10 seconds if it doesn't exist
-    this.pollInterval = (this.getSetting('poll_interval') || 10) * 1000;
-
     this.robot = new BotvacRobot(this);
-
     this.robot.setSettings(this.getSettings());
     this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
     this._onPollState();
-    this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
-
+    this.setPollStateInterval(this.getSetting('poll_interval'));
     this.log(`BotVac added: ${this.getName()} - ${this.data.id}`);
   }
 
   onSettings(settingsEvent) {
     if (settingsEvent.changedKeys.includes('poll_interval')) {
-      this.pollInterval = settingsEvent.newSettings.poll_interval * 1000;
-      clearInterval(this._pollStateInterval);
-      this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
+      this.setPollStateInterval(settingsEvent.newSettings.poll_interval);
     }
     this.robot.setSettings(settingsEvent.newSettings);
+  }
+
+  setPollStateInterval(interval) {
+    if (!interval || interval < 10 || interval > 600) {
+      interval = 10;
+    }
+
+    if (this.pollStateBinding) {
+      clearInterval(this.pollStateBinding);
+    }
+    this.currentPollingInterval = interval;
+    this.pollStateBinding = setInterval(this._onPollState.bind(this), (interval * 1000));
+    this.log(`Poll setting changed: ${this.getName()} - ${interval}`);
   }
 
   onDeleted() {
@@ -44,7 +53,12 @@ class BotVacDevice extends Homey.Device {
         throw new Error(robotError);
       }
 
-      // If no error, default to available and set relevant status(es)
+      // If no error, reset error counter, default to available and set relevant status(es)
+      if (this.pollingError) {
+        this.pollingError = 0;
+        this.setPollStateInterval(this.getSetting('poll_interval'));
+      }
+
       this.setAvailable();
       this.setCapabilityValue('measure_battery', await this.robot.getBatteryCharge());
       if (await this.robot.isCharging()) {
@@ -59,6 +73,10 @@ class BotVacDevice extends Homey.Device {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
       }
     } catch (error) {
+      // to prevent long running/cascading errors to bog up Homey or flood the Neato api,
+      // we increase the interval for each successive error up to the maximum of 600 sec
+      this.pollingError++;
+      this.setPollStateInterval(this.currentPollingInterval * this.pollingError);
       this.error('_onPollState');
       this.error(error);
       if (this.homey.app.debug) {
