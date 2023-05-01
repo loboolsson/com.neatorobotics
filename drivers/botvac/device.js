@@ -12,7 +12,14 @@ class BotVacDevice extends Homey.Device {
     // Get pollinterval or set it to the default of 10 seconds if it doesn't exist
     this.pollInterval = (this.getSetting('poll_interval') || 10) * 1000;
 
-    this._init();
+    this.robot = new BotvacRobot(this);
+
+    this.robot.setSettings(this.getSettings());
+    this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
+    this._onPollState();
+    this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
+
+    this.log(`BotVac added: ${this.getName()} - ${this.data.id}`);
   }
 
   onSettings(settingsEvent) {
@@ -92,17 +99,6 @@ class BotVacDevice extends Homey.Device {
       this._onPollState();
       throw new Error(error);
     }
-  }
-
-  async _init() {
-    this.robot = new BotvacRobot(this);
-
-    this.robot.setSettings(this.getSettings());
-    this.registerCapabilityListener('vacuumcleaner_state', this._onCapabilityVaccumState.bind(this));
-    this._onPollState();
-    this._pollStateInterval = setInterval(this._onPollState.bind(this), this.pollInterval);
-
-    this.log(`BotVac added: ${this.getName()} - ${this.data.id}`);
   }
 
 }
