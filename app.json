@@ -1,12 +1,12 @@
 {
   "id": "com.neatorobotics",
-  "version": "1.1.2",
-  "compatibility": ">=1.5.0",
+  "version": "2.0.5",
+  "compatibility": ">=5.0.0",
   "platforms": [
     "local"
   ],
   "support": "mailto:lobo.olsson@gmail.com",
-  "sdk": 2,
+  "sdk": 3,
   "brandColor": "#ff6021",
   "name": {
     "en": "Neato BotVac"
@@ -39,8 +39,8 @@
   },
   "permissions": [],
   "author": {
-    "name": "Athom B.V.",
-    "email": "info@athom.nl"
+    "name": "Lobo Olsson",
+    "email": "lobo.olsson@gmail.com"
   },
   "drivers": [
     {
@@ -93,48 +93,56 @@
           "id": "poll_interval",
           "type": "number",
           "value": 10,
+          "min": 10,
+          "max": 600,
           "label": {
-            "nl": "Polling interval voor de apparaatstatus",
-            "en": "Polling interval for device state"
+            "nl": "Polling interval voor de apparaatstatus (s)",
+            "en": "Polling interval for device state (s)"
           }
         },
         {
-          "id": "navigationMode",
-          "type": "radio",
-          "value": "2",
-          "label": {
-            "en": "Navigation Mode"
-          },
-          "values": [
+          "type": "group",
+          "label": { "en": "Navigation settings (Not supported by all firmwares)" },
+          "children": [
             {
-              "id": "1",
+              "id": "navigationMode",
+              "type": "radio",
+              "value": "2",
               "label": {
-                "en": "Normal"
+                "en": "Navigation Mode"
+              },
+              "values": [
+                {
+                  "id": "1",
+                  "label": {
+                    "en": "Normal"
+                  }
+                },
+                {
+                  "id": "2",
+                  "label": {
+                    "en": "Extra care"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "noGoLines",
+              "type": "checkbox",
+              "value": true,
+              "label": {
+                "en": "Enable no-go lines"
               }
             },
             {
-              "id": "2",
+              "id": "ecoMode",
+              "type": "checkbox",
+              "value": true,
               "label": {
-                "en": "Extra care"
+                "en": "Enable ECO mode"
               }
             }
           ]
-        },
-        {
-          "id": "noGoLines",
-          "type": "checkbox",
-          "value": true,
-          "label": {
-            "en": "Enable no-go lines"
-          }
-        },
-        {
-          "id": "ecoMode",
-          "type": "checkbox",
-          "value": true,
-          "label": {
-            "en": "Enable ECO mode"
-          }
         }
       ]
     }

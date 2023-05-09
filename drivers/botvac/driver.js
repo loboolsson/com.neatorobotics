@@ -2,7 +2,9 @@
 
 const Homey = require('homey');
 const axios = require('axios').default;
-const BotvacUser = require('../../lib/BotvacUser');
+const NodeBotvacClient = require('node-botvac/lib/client');
+
+let AccessToken;
 
 class BotVacDriver extends Homey.Driver {
 
@@ -34,48 +36,72 @@ class BotVacDriver extends Homey.Driver {
     }
   }
 
-  onPair(socket) {
-    const neatoOAuthCallback = new Homey.CloudOAuth2Callback(this._oAuth2AuthUrl);
-    neatoOAuthCallback
+  async getAllRobots(accessToken) {
+    const botvacClient = new NodeBotvacClient(accessToken, 'OAuth');
+    const robotPromise = new Promise((resolve, reject) => {
+      botvacClient.getRobots((error, robots) => {
+        if (error) {
+          // eslint-disable-next-line prefer-promise-reject-errors
+          reject(`Error getting robots: ${error}`);
+        } else if (!robots) {
+          // eslint-disable-next-line prefer-promise-reject-errors
+          reject('0 robots returned');
+        } else {
+          resolve(robots);
+        }
+      });
+    });
+    return robotPromise;
+  }
+
+  async listDevices() {
+    if (!AccessToken) {
+      throw new Error('Cannot list Neato devices!');
+    }
+
+    try {
+      // Check if we can get the list of devices. If not throw error
+      const robots = await this.getAllRobots(AccessToken);
+      const devices = robots.map((robot) => {
+        return {
+          name: robot.name,
+          data: {
+            id: robot._serial,
+          },
+          store: {
+            secret: robot._secret,
+          },
+        };
+      });
+      if (!devices) {
+        return [];
+      }
+      return devices;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async onPair(session) {
+    const myOAuth2Callback = await this.homey.cloud.createOAuth2Callback(this._oAuth2AuthUrl);
+    myOAuth2Callback
       .on('url', (url) => {
-        socket.emit('url', url);
+        // Send the URL to the front-end to open a popup
+        session.emit('url', url);
       })
       .on('code', async (code) => {
+        // ... swap your code here for an access token
         const tokensObject = await this.getOauthToken(code);
-        this.BotvacUser = new BotvacUser(tokensObject.access_token, this.log);
-        socket.emit('authorized');
-      })
-      .generate()
-      .catch((err) => {
-        socket.emit('error', err);
+        if (tokensObject && tokensObject.access_token) {
+          AccessToken = tokensObject.access_token;
+        } else {
+          throw new Error('Cannot get access token from Neato!');
+        }
+        // tell the front-end we're done
+        session.emit('authorized');
       });
 
-    socket.on('list_devices', (data, callback) => {
-      try {
-        // Check if we can get the list of devices. If not assume credentials are invalid
-        this.BotvacUser.getAllRobots()
-          .then((robots) => {
-            const pairingDevices = robots.map((robot) => {
-              return {
-                name: robot.name,
-                data: {
-                  id: robot._serial,
-                },
-                store: {
-                  secret: robot._secret,
-                },
-              };
-            });
-            callback(null, pairingDevices);
-          })
-          .catch((err) => {
-            callback(err);
-          });
-      } catch (err) {
-        console.log(err);
-        callback(err);
-      }
-    });
+    session.setHandler('list_devices', this.listDevices);
   }
 
 }
