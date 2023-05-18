@@ -79,11 +79,11 @@ class BotVacDevice extends Homey.Device {
       this.setPollStateInterval(this.currentPollingInterval * this.pollingError);
       this.error('_onPollState');
       this.error(error);
+      this.setUnavailable(error);
       if (this.homey.app.debug) {
         this.error(await this.robot.getState());
+        throw new Error(error);
       }
-      this.setUnavailable(error);
-      throw new Error(error);
     }
   }
 
