@@ -101,7 +101,7 @@ class BotVacDriver extends Homey.Driver {
         session.emit('authorized');
       });
 
-    session.setHandler('list_devices', this.listDevices);
+    session.setHandler('list_devices', this.listDevices.bind(this));
   }
 
 }
