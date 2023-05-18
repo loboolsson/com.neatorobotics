@@ -53,7 +53,7 @@ class BotVacDevice extends Homey.Device {
         throw new Error(robotError);
       }
 
-      // If no error, reset error counter, default to available and set relevant status(es)
+      // If we've had earlier errors, reset counter and poll interval
       if (this.pollingError) {
         this.pollingError = 0;
         this.setPollStateInterval(this.getSetting('poll_interval'));
@@ -80,7 +80,7 @@ class BotVacDevice extends Homey.Device {
       this.error('_onPollState');
       this.error(error);
       this.setUnavailable(error);
-      if (this.homey.app.debug) {
+      if (this.homey.settings.get('debug')) {
         this.error(await this.robot.getState());
         throw new Error(error);
       }
@@ -111,7 +111,7 @@ class BotVacDevice extends Homey.Device {
     } catch (error) {
       this.error('_onCapabilityVaccumState');
       this.error(error);
-      if (this.homey.app.debug) {
+      if (this.homey.settings.get('debug')) {
         this.error(await this.robot.getState());
       }
       this._onPollState();
