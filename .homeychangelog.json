@@ -10,5 +10,8 @@
   },
   "2.0.7": {
     "en": "Fixing bug for adding devices. Adding setting for debug mode"
+  },
+  "2.0.11": {
+    "en": "Better handling of cache and network calls to avoid errors on failed connections to Neato servers"
   }
 }

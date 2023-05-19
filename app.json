@@ -1,6 +1,6 @@
 {
   "id": "com.neatorobotics",
-  "version": "2.0.7",
+  "version": "2.0.11",
   "compatibility": ">=5.0.0",
   "platforms": [
     "local"
