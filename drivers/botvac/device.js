@@ -20,6 +20,9 @@ class BotVacDevice extends Homey.Device {
     this.log(`BotVac added: ${this.getName()} - ${this.data.id}`);
   }
 
+  /**
+   * Handle setting changes and make sure we update the poll rate correctly
+   */
   onSettings(settingsEvent) {
     if (settingsEvent.changedKeys.includes('poll_interval')) {
       this.setPollStateInterval(settingsEvent.newSettings.poll_interval);
@@ -27,9 +30,17 @@ class BotVacDevice extends Homey.Device {
     this.robot.setSettings(settingsEvent.newSettings);
   }
 
+  /**
+   * Set the interval for polling Neato API
+   * accepts seconds as integer, minimum 10s, maximum 600s. Defaults to 10
+   */
   setPollStateInterval(interval) {
-    if (!interval || interval < 10 || interval > 600) {
+    if (!interval || !Number.isInteger(interval) || interval < 10) {
       interval = 10;
+    }
+
+    if (interval > 600) {
+      interval = 600;
     }
 
     if (this.pollStateBinding) {
@@ -73,16 +84,25 @@ class BotVacDevice extends Homey.Device {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
       }
     } catch (error) {
+      this.setUnavailable(error);
+
       // to prevent long running/cascading errors to bog up Homey or flood the Neato api,
       // we increase the interval for each successive error up to the maximum of 600 sec
       this.pollingError++;
       this.setPollStateInterval(this.currentPollingInterval * this.pollingError);
-      this.error('_onPollState');
-      this.error(error);
-      this.setUnavailable(error);
+
+      // Log error data
+      let errorLog = '_onPollState \n';
+      errorLog += `${JSON.stringify(error)}\n`;
+
+      // If we are in the debug state log additional state info
       if (this.homey.settings.get('debug')) {
-        this.error(await this.robot.getState());
-        throw new Error(error);
+        errorLog += `${JSON.stringify(await this.robot.getState())}\n`;
+      }
+      this.error(errorLog);
+      // If we have multiple repeat errors also throw the error instead of waiting for the user to submit a report
+      if (this.homey.settings.get('debug') && this.pollingError > 5) {
+        throw new Error(errorLog);
       }
     }
   }
