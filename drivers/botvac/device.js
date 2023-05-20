@@ -6,8 +6,8 @@ const BotvacRobot = require('../../lib/BotvacRobot');
 class BotVacDevice extends Homey.Device {
 
   pollStateBinding = null;
-  currentPollingInterval = 0;
   pollingError = 0;
+  pollingLock = false;
 
   async onInit() {
     this.data = this.getData();
@@ -46,9 +46,8 @@ class BotVacDevice extends Homey.Device {
     if (this.pollStateBinding) {
       clearInterval(this.pollStateBinding);
     }
-    this.currentPollingInterval = interval;
     this.pollStateBinding = setInterval(this._onPollState.bind(this), (interval * 1000));
-    this.log(`Poll setting changed: ${this.getName()} - ${interval}`);
+    this.log(`Poll interval changed: ${this.getName()} - ${interval}`);
   }
 
   onDeleted() {
@@ -56,7 +55,13 @@ class BotVacDevice extends Homey.Device {
   }
 
   async _onPollState() {
+    // To prevent a Poll starting before the previous finished we lock polling
+    if (this.pollingLock) {
+      this.log('Polling locked');
+      return;
+    }
     try {
+      this.pollingLock = true;
       // If we get an error, set state as stopped, device as unavaliable and return early.
       const robotError = await this.robot.getError();
       if (robotError) {
@@ -83,41 +88,42 @@ class BotVacDevice extends Homey.Device {
       } else {
         this.setCapabilityValue('vacuumcleaner_state', 'stopped');
       }
+      this.pollingLock = false;
     } catch (error) {
       this.setUnavailable(error);
 
       // to prevent long running/cascading errors to bog up Homey or flood the Neato api,
-      // we increase the interval for each successive error up to the maximum of 600 sec
+      // we exponentially increase the interval for each successive error up to the maximum of 600 sec
+      // Maximum would be hit within 8 failed calls
       this.pollingError++;
-      this.setPollStateInterval(this.currentPollingInterval * this.pollingError);
+      this.setPollStateInterval(this.getSetting('poll_interval') * this.pollingError * this.pollingError);
 
       // Log error data
       let errorLog = '_onPollState \n';
-      errorLog += `${JSON.stringify(error)}\n`;
+      errorLog += `errorCount: ${this.pollingError} \n`;
+      errorLog += `${error} \n`;
 
       // If we are in the debug state log additional state info
       if (this.homey.settings.get('debug')) {
-        errorLog += `${JSON.stringify(await this.robot.getState())}\n`;
+        errorLog += `State: ${JSON.stringify(await this.robot.getState(), null, 2)} \n`;
       }
       this.error(errorLog);
-      // If we have multiple repeat errors also throw the error instead of waiting for the user to submit a report
-      if (this.homey.settings.get('debug') && this.pollingError > 5) {
+      this.pollingLock = false;
+
+      // If user is in debug mode and we have multiple repeat errors
+      // throw the error instead of waiting for a user report.
+      // We only throw the error once when the user reaches 10 consequtive failures
+      if (this.homey.settings.get('debug') && this.pollingError === 10) {
         throw new Error(errorLog);
       }
     }
   }
 
   // eslint-disable-next-line consistent-return
-  async _onCapabilityVaccumState(value) {
-    // TODO
-    // We need to handle allowed/disallowed state transitions
-    // IE, we cannot force the bot to charge,
-    // so if it is already docked it cannot be switched to the charged state,
-    // and if it is charging in the doc we cannot have it be docked without charging
-    // We also cannot switch from normal cleaning to spot-cleaning on the fly
+  async _onCapabilityVaccumState(newState) {
     try {
       // eslint-disable-next-line default-case
-      switch (value) {
+      switch (newState) {
         case 'cleaning':
           return this.robot.startCleaningCycle();
         case 'spot_cleaning':
@@ -129,13 +135,14 @@ class BotVacDevice extends Homey.Device {
           return this.robot.stopCleaningCycle();
       }
     } catch (error) {
-      this.error('_onCapabilityVaccumState');
-      this.error(error);
+      // Log error data
+      let errorLog = '_onCapabilityVaccumState \n';
+      errorLog += `${error} \n`;
+      // If we are in the debug state log additional state info
       if (this.homey.settings.get('debug')) {
-        this.error(await this.robot.getState());
+        errorLog += `State: ${JSON.stringify(await this.robot.getState(), null, 2)} \n`;
       }
-      this._onPollState();
-      throw new Error(error);
+      this.error(errorLog);
     }
   }
 
