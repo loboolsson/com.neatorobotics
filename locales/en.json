@@ -39,5 +39,13 @@
   "error_getting_robots": "Error getting robots",
   "error_getting_single_robot": "Error getting specific robot",
   "failed_to_get_token": "Error whilst authenticating user",
-  "error_in_robot_request": "Error whilst communicating with robot"
+  "error_in_robot_request": "Error whilst communicating with robot",
+
+  "settings": {
+    "title": "Neato Advanced Settings",
+    "debug-title": "Debug Mode",
+    "debug-explanation": "Debug Mode is on by default when you've downloaded a test app. Otherwise it should only be used when the developer has requested it.",
+    "debug-checkbox": "Enable debug mode",
+    "save-confirmation": "Settings saved"
+  }
 }
